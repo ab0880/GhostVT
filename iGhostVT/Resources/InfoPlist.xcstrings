@@ -40,6 +40,12 @@
     "iGhostVT tab" : {
       "comment" : "Uniform type description of a tab dragged between the sidebar and the tab strip",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "علامة تبويب iGhostVT"
+          }
+        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
@@ -92,6 +98,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вкладка iGhostVT"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab iGhostVT"
           }
         },
         "zh-Hans" : {

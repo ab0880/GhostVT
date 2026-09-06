@@ -334,6 +334,7 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
 				de,
 				es,
 				fr,
@@ -342,6 +343,7 @@
 				ko,
 				"pt-BR",
 				ru,
+				vi,
 				"zh-Hans",
 				"zh-Hant",
 			);
