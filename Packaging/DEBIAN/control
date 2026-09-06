@@ -3,13 +3,10 @@ Name: iGhostVT
 Version: @VERSION@
 Architecture: @ARCHITECTURE@
 Description: Ghostty-powered terminal for iOS and visionOS
- Terminal emulator built on libghostty's terminal core with a host-managed
- I/O backend. Packaged for both roothide and rootless bootstraps, for iOS
- (iphoneos-*) and for Apple Vision Pro (xros-*); the architecture field says
- which build this is.
- .
- Shells are spawned by the bundled ighostvtd daemon and survive app
- relaunches; SSH transport is planned on the same transport interface.
+ A real terminal on your device, drawn by the same engine as Ghostty on the
+ desktop. Your shell keeps running in the background, so a build you started
+ is still going when you switch apps and still there when you come back.
+ Runs on iPhone, iPad and Apple Vision Pro.
 Icon: https://owngoal-dev.github.io/iGhostVT/icon.png
 Maintainer: OwnGoal Studio <not-gonna-reply@owngoal.dev>
 Author: OwnGoal Studio <not-gonna-reply@owngoal.dev>
