@@ -41,8 +41,9 @@ which launchd never sized — so a session's buffers cannot jetsam the daemon.
   for exactly this reason.
 - Depends on the **released**
   [libghostty-spm](https://github.com/Lakr233/libghostty-spm) package
-  (`upToNextMajor` from 1.5.20260903 — the first release on the
-  `<major.minor>.<YYYYMMDD>` track, Ghostty c4e16970a on Zig 0.16, with
+  (`upToNextMajor` from 1.5.20260906 — generated configs are scoped to the
+  host's bundle id; the `<major.minor>.<YYYYMMDD>` track began in
+  1.5.20260903, Ghostty c4e16970a on Zig 0.16, with
   precision scroll, pointer style via `UIPointerInteraction`, and clipboard
   reads through the shared pasteboard reader; below 1.5.2 the UIKit view's resize
   throttle is armed before any size was sent and a surface keeps the
@@ -63,6 +64,14 @@ which launchd never sized — so a session's buffers cannot jetsam the daemon.
   the `upstream.X.Y.Z` tags hold the XCFramework binaries. Terminal-library
   changes land in that repo and ship via a new package release — don't
   reintroduce a local path reference to a sibling checkout.
+
+Generated Ghostty configs live under `tmp/wiki.qaq.iGhostVT/`, using the
+library's `TerminalController.managedConfigDirectory`. `AppDelegate` calls
+`GhosttyAppConfiguration.removeTemporaryFiles()` before creating terminals
+at launch and on termination. Startup handles leftovers from force-quits
+that receive no termination callback. Controllers still remove their own
+files on replacement and destruction; old loose configs in shared tmp are
+left alone.
 
 ## Layout
 

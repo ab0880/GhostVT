@@ -1,3 +1,4 @@
+import Foundation
 import GhosttyTerminal
 
 /// Runtime Ghostty config compiled into the generated overlay.
@@ -17,6 +18,19 @@ import GhosttyTerminal
 /// surface, and a file without the preference reset the first terminal to
 /// the library's size. A later line wins in ghostty, so this one does.
 enum GhosttyAppConfiguration {
+    /// Called before any terminal is created and on explicit quit. Startup
+    /// also catches files left by a force-quit, where iOS sends no callback.
+    @MainActor
+    static func removeTemporaryFiles() {
+        do {
+            try FileManager.default.removeItem(at: TerminalController.managedConfigDirectory)
+        } catch CocoaError.fileNoSuchFile {
+            // A clean launch has no directory yet; the library creates it.
+        } catch {
+            AppLog.warning(.ghostty, "Could not remove temporary configurations: \(error)")
+        }
+    }
+
     static var terminal: TerminalConfiguration {
         TerminalConfiguration { builder in
             builder.withFontSize(TerminalFontSize.preferred)

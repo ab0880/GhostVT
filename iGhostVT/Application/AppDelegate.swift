@@ -15,6 +15,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // First, so everything after it lands in this launch's journal file
         // (Settings ▸ Advanced ▸ Logs) as well as the unified log.
         AppLog.start()
+        GhosttyAppConfiguration.removeTemporaryFiles()
         // Surface lifecycle and sizing, so a surface that never comes up on
         // device says where it stopped. Input/output categories stay off —
         // they would log keystrokes.
@@ -65,6 +66,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     /// The device daemon is kept alive by launchd whatever it does, so it is
     /// never asked.
     func applicationWillTerminate(_ application: UIApplication) {
+        GhosttyAppConfiguration.removeTemporaryFiles()
         #if targetEnvironment(macCatalyst)
             let stopDaemon = true
         #else
