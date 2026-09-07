@@ -13,3 +13,9 @@
 // the visionOS section of CLAUDE.md lists the one construct that would raise
 // it (a multi-child `#available` branch, whose TupleContent is visionOS 26+).
 XROS_DEPLOYMENT_TARGET = 1.0
+
+// The `CiGhostVTXPC` clang module — static inline accessors over the SDK's
+// XPC_TYPE_* macros. Naming those macros in Swift instead resolves to the iOS
+// 27 SDK's XPC overlay and links /usr/lib/swift/libswiftXPC.dylib non-weakly,
+// which does not exist on iOS 15. See Shared/XPCShim/module.modulemap.
+SWIFT_INCLUDE_PATHS = $(inherited) $(SRCROOT)/Shared/XPCShim

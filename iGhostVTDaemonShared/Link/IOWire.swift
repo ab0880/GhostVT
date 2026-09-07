@@ -120,29 +120,29 @@ enum IOCodec {
     private static func encode(_ object: xpc_object_t, into buffer: inout [UInt8], depth: Int) -> Bool {
         guard depth < maximumDepth else { return false }
         let type = xpc_get_type(object)
-        if type == XPC_TYPE_UINT64 {
+        if type == iGhostVTXPC.typeUInt64 {
             buffer.append(Tag.uint64.rawValue)
             IOWire.appendUInt64(xpc_uint64_get_value(object), to: &buffer)
-        } else if type == XPC_TYPE_INT64 {
+        } else if type == iGhostVTXPC.typeInt64 {
             buffer.append(Tag.int64.rawValue)
             IOWire.appendUInt64(UInt64(bitPattern: xpc_int64_get_value(object)), to: &buffer)
-        } else if type == XPC_TYPE_BOOL {
+        } else if type == iGhostVTXPC.typeBool {
             buffer.append(Tag.bool.rawValue)
             buffer.append(xpc_bool_get_value(object) ? 1 : 0)
-        } else if type == XPC_TYPE_STRING {
+        } else if type == iGhostVTXPC.typeString {
             let length = xpc_string_get_length(object)
             guard let pointer = xpc_string_get_string_ptr(object) else { return false }
             buffer.append(Tag.string.rawValue)
             IOWire.appendUInt32(UInt32(length), to: &buffer)
             buffer.append(contentsOf: UnsafeRawBufferPointer(start: pointer, count: length))
-        } else if type == XPC_TYPE_DATA {
+        } else if type == iGhostVTXPC.typeData {
             let length = xpc_data_get_length(object)
             buffer.append(Tag.data.rawValue)
             IOWire.appendUInt32(UInt32(length), to: &buffer)
             if length > 0, let pointer = xpc_data_get_bytes_ptr(object) {
                 buffer.append(contentsOf: UnsafeRawBufferPointer(start: pointer, count: length))
             }
-        } else if type == XPC_TYPE_ARRAY {
+        } else if type == iGhostVTXPC.typeArray {
             let count = xpc_array_get_count(object)
             buffer.append(Tag.array.rawValue)
             IOWire.appendUInt32(UInt32(count), to: &buffer)
@@ -151,7 +151,7 @@ enum IOCodec {
                     return false
                 }
             }
-        } else if type == XPC_TYPE_DICTIONARY {
+        } else if type == iGhostVTXPC.typeDictionary {
             buffer.append(Tag.dictionary.rawValue)
             IOWire.appendUInt32(UInt32(xpc_dictionary_get_count(object)), to: &buffer)
             var succeeded = true

@@ -118,7 +118,7 @@ final class PeerAuthenticator {
                 ighostvtXPCCopyEntitlement($0, &token)
             }
             return value.map {
-                xpc_get_type($0) == XPC_TYPE_BOOL && xpc_bool_get_value($0)
+                xpc_get_type($0) == iGhostVTXPC.typeBool && xpc_bool_get_value($0)
             } ?? false
         }
     }

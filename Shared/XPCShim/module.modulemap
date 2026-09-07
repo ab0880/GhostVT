@@ -1,0 +1,20 @@
+// `XPC_TYPE_DICTIONARY` and its siblings are C macros over libSystem globals
+// that have existed since iOS 8. The iOS 27 SDK also ships a Swift overlay for
+// XPC, and in Swift those same spellings resolve to accessors exported by
+// `/usr/lib/swift/libswiftXPC.dylib` — a library the system first shipped
+// after iOS 15. The overlay's .tbd carries no back-deployment metadata, so one
+// use of one of them turns its load command from weak into required no matter
+// how low IPHONEOS_DEPLOYMENT_TARGET is, and dyld then kills the process at
+// launch on iOS 15: "Library not loaded: /usr/lib/swift/libswiftXPC.dylib".
+//
+// So the macros are read through C, where they are still the old globals, and
+// no Swift file in this project names them. See `iGhostVTXPC` in
+// Shared/Protocol; `make check` fails on a Swift file that spells one.
+//
+// Reached through SWIFT_INCLUDE_PATHS in Configuration/Base.xcconfig — this
+// folder is deliberately not a file-system-synchronized group, so it joins no
+// target's compile sources.
+module CiGhostVTXPC [system] {
+    header "shim.h"
+    export *
+}

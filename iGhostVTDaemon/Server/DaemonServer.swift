@@ -89,7 +89,7 @@ final class DaemonServer {
     }
 
     private func accept(_ event: xpc_object_t) {
-        guard xpc_get_type(event) == XPC_TYPE_CONNECTION else { return }
+        guard xpc_get_type(event) == iGhostVTXPC.typeConnection else { return }
         guard let clientPID = authenticator.authenticate(event) else {
             DaemonFileLog.log("peer rejected, connection canceled")
             xpc_connection_cancel(event)

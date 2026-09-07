@@ -349,12 +349,12 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
     private static func sessions(in reply: xpc_object_t) -> [SessionSummary]? {
         guard replyCode(of: reply) == .success,
               let array = xpc_dictionary_get_value(reply, iGhostVTWireKey.sessions),
-              xpc_get_type(array) == XPC_TYPE_ARRAY
+              xpc_get_type(array) == iGhostVTXPC.typeArray
         else { return nil }
         var rows: [SessionSummary] = []
         for index in 0 ..< xpc_array_get_count(array) {
             let entry = xpc_array_get_value(array, index)
-            guard xpc_get_type(entry) == XPC_TYPE_DICTIONARY else { continue }
+            guard xpc_get_type(entry) == iGhostVTXPC.typeDictionary else { continue }
             rows.append(SessionSummary(
                 id: xpc_dictionary_get_uint64(entry, iGhostVTWireKey.sessionID),
                 isAttached: xpc_dictionary_get_bool(entry, iGhostVTWireKey.isAttached)
@@ -366,13 +366,13 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
     private static func shells(in reply: xpc_object_t) -> [String]? {
         guard replyCode(of: reply) == .success,
               let array = xpc_dictionary_get_value(reply, iGhostVTWireKey.shells),
-              xpc_get_type(array) == XPC_TYPE_ARRAY,
+              xpc_get_type(array) == iGhostVTXPC.typeArray,
               xpc_array_get_count(array) <= iGhostVTProtocol.maximumListedShellCount
         else { return nil }
         var paths: [String] = []
         for index in 0 ..< xpc_array_get_count(array) {
             let value = xpc_array_get_value(array, index)
-            guard xpc_get_type(value) == XPC_TYPE_STRING,
+            guard xpc_get_type(value) == iGhostVTXPC.typeString,
                   xpc_string_get_length(value) < MAXPATHLEN,
                   let pointer = xpc_string_get_string_ptr(value)
             else { return nil }
@@ -608,7 +608,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
 
     private func handle(_ event: xpc_object_t) {
         let type = xpc_get_type(event)
-        if type == XPC_TYPE_ERROR {
+        if type == iGhostVTXPC.typeError {
             // The link died out from under us — daemon restart, not a
             // session end. The resume ID survives, so a reconnect can
             // reattach to the still-running shell. A cancel this transport
@@ -628,7 +628,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
             )))
             return
         }
-        guard type == XPC_TYPE_DICTIONARY,
+        guard type == iGhostVTXPC.typeDictionary,
               xpc_dictionary_get_uint64(event, iGhostVTWireKey.version) == iGhostVTProtocol.version,
               let pushed = iGhostVTEvent(
                   rawValue: xpc_dictionary_get_uint64(event, iGhostVTWireKey.event)
@@ -726,7 +726,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
     }
 
     private static func replyCode(of reply: xpc_object_t) -> iGhostVTReplyCode {
-        guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY,
+        guard xpc_get_type(reply) == iGhostVTXPC.typeDictionary,
               xpc_dictionary_get_uint64(reply, iGhostVTWireKey.version) == iGhostVTProtocol.version,
               let code = iGhostVTReplyCode(
                   rawValue: xpc_dictionary_get_int64(reply, iGhostVTWireKey.code)
@@ -750,14 +750,14 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
     }
 
     private static func string(_ key: String, in dictionary: xpc_object_t) -> String? {
-        guard xpc_get_type(dictionary) == XPC_TYPE_DICTIONARY,
+        guard xpc_get_type(dictionary) == iGhostVTXPC.typeDictionary,
               let value = xpc_dictionary_get_string(dictionary, key)
         else { return nil }
         return String(cString: value)
     }
 
     private static func data(_ key: String, in dictionary: xpc_object_t) -> Data? {
-        guard xpc_get_type(dictionary) == XPC_TYPE_DICTIONARY else { return nil }
+        guard xpc_get_type(dictionary) == iGhostVTXPC.typeDictionary else { return nil }
         var count = 0
         guard let bytes = xpc_dictionary_get_data(dictionary, key, &count),
               count <= iGhostVTProtocol.maximumMessageDataByteCount else { return nil }
@@ -768,7 +768,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
     /// tried and what the system said, and only the reply code survives
     /// otherwise. Falls back to the generic wording for a code with no detail.
     private static func failureReason(_ reply: xpc_object_t, code: iGhostVTReplyCode) -> String {
-        guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY,
+        guard xpc_get_type(reply) == iGhostVTXPC.typeDictionary,
               let message = xpc_dictionary_get_string(reply, iGhostVTWireKey.errorMessage)
         else { return describe(code) }
         let text = String(cString: message)

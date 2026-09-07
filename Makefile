@@ -57,6 +57,10 @@ PACKAGE_ARCHITECTURE ?= $(DEB_ARCH_OS)-arm64
 else
 $(error PACKAGE_FLAVOR must be roothide or rootless, got '$(PACKAGE_FLAVOR)')
 endif
+# The clang module holding the SDK's XPC_TYPE_* macros as C functions. Xcode
+# reaches it through SWIFT_INCLUDE_PATHS in Configuration/Base.xcconfig; the
+# hand-rolled harness compile needs the same -I.
+XPC_SHIM_DIR        := $(ROOT_DIR)/Shared/XPCShim
 CONFIG_DIR          := $(ROOT_DIR)/Configuration
 VERSION_CONFIG      := $(CONFIG_DIR)/Version.xcconfig
 xcconfig_setting     = $(strip $(shell awk -F= '$$1 ~ /^[[:space:]]*$(1)[[:space:]]*$$/ { gsub(/[[:space:]]/, "", $$2); print $$2; exit }' "$(VERSION_CONFIG)"))
@@ -179,6 +183,21 @@ check:
 		|| { echo "error: the CLI's signing identifier must match in PeerAuthenticator.swift and package-mac.sh" >&2; exit 65; }
 	@! grep -rnE '[A-Za-z0-9] \([A-Z0-9]{10}\)' "$(ROOT_DIR)/Scripts" "$(ROOT_DIR)/Makefile" "$(ROOT_DIR)/Packaging" \
 		|| { echo "error: a signing identity ('Name (TEAMID)') is hardcoded above — identities come from the keychain or MAC_ZIP_IDENTITY/MAC_UPDATE_IDENTITY, never the repo" >&2; exit 65; }
+	@test -f "$(XPC_SHIM_DIR)/module.modulemap" -a -f "$(XPC_SHIM_DIR)/shim.h" \
+		|| { echo "error: Shared/XPCShim is missing — the XPC_TYPE_* macros are read through the CiGhostVTXPC module" >&2; exit 66; }
+	@grep -qF 'SWIFT_INCLUDE_PATHS' "$(CONFIG_DIR)/Base.xcconfig" \
+		|| { echo "error: Configuration/Base.xcconfig must add Shared/XPCShim to SWIFT_INCLUDE_PATHS" >&2; exit 65; }
+	@floor="$$(sed -n 's/.*IPHONEOS_DEPLOYMENT_TARGET = \([0-9.]*\);.*/\1/p' "$(PROJECT)/project.pbxproj" | sort -V | head -1)"; \
+	if (( $${floor%%.*} < 16 )); then \
+		hits="$$(grep -rnE '\bXPC_(TYPE|ERROR|ARRAY_APPEND)[A-Z_0-9]*' --include='*.swift' \
+			"$(ROOT_DIR)/iGhostVT" "$(ROOT_DIR)/iGhostVTDaemon" "$(ROOT_DIR)/iGhostVTDaemonShared" \
+			"$(ROOT_DIR)/iGhostVTIO" "$(ROOT_DIR)/iGhostVTCLI" "$(ROOT_DIR)/iGhostVTWidgets" \
+			"$(ROOT_DIR)/Shared" "$(ROOT_DIR)/Tests" || true)"; \
+		if [[ -n "$$hits" ]]; then \
+			echo "warning: an SDK XPC macro is named in Swift below — that links /usr/lib/swift/libswiftXPC.dylib, which iOS $$floor does not have, and dyld kills the process at launch. Use iGhostVTXPC (Shared/Protocol/iGhostVTXPC.swift):" >&2; \
+			echo "$$hits" >&2; \
+		fi; \
+	fi
 
 # The app has no unit tests since the TCP transport left; the harness and
 # the CLI renderer tests are the whole suite until it grows some again.
@@ -192,12 +211,14 @@ test: harness
 harness:
 	@harness_dir="$$(mktemp -d /tmp/ighostvt-harness.XXXXXX)"; \
 	trap 'rm -rf "$$harness_dir"' EXIT; \
-	xcrun --sdk macosx swiftc -swift-version 5 \
+	xcrun --sdk macosx swiftc -swift-version 5 -I "$(XPC_SHIM_DIR)" \
 		"$(ROOT_DIR)/Shared/Protocol/iGhostVTProtocol.swift" \
+		"$(ROOT_DIR)/Shared/Protocol/iGhostVTXPC.swift" \
 		$$(find "$(ROOT_DIR)/iGhostVTDaemonShared" "$(ROOT_DIR)/iGhostVTIO" -name '*.swift' | sort) \
 		-o "$$harness_dir/ighostvtd-io" && \
-	xcrun --sdk macosx swiftc -swift-version 5 -DDEBUG \
+	xcrun --sdk macosx swiftc -swift-version 5 -DDEBUG -I "$(XPC_SHIM_DIR)" \
 		"$(ROOT_DIR)/Shared/Protocol/iGhostVTProtocol.swift" \
+		"$(ROOT_DIR)/Shared/Protocol/iGhostVTXPC.swift" \
 		$$(find "$(ROOT_DIR)/iGhostVTDaemonShared" "$(ROOT_DIR)/iGhostVTIO" "$(ROOT_DIR)/iGhostVTDaemon" -name '*.swift' ! -name 'main.swift' | sort) \
 		$$(find "$(ROOT_DIR)/Tests/PTYHarness" -name '*.swift' | sort) \
 		-o "$$harness_dir/harness" && \

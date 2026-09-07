@@ -51,11 +51,11 @@ final class PeerRelay: IOPeer {
 
     private func handle(_ event: xpc_object_t) {
         let type = xpc_get_type(event)
-        if type == XPC_TYPE_ERROR {
+        if type == iGhostVTXPC.typeError {
             invalidate()
             return
         }
-        guard type == XPC_TYPE_DICTIONARY, isValid else { return }
+        guard type == iGhostVTXPC.typeDictionary, isValid else { return }
 
         let reply = xpc_dictionary_create_reply(event)
         let isGoodbye = xpc_dictionary_get_uint64(event, iGhostVTWireKey.operation)

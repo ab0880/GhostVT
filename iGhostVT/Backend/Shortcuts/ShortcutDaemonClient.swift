@@ -334,7 +334,7 @@ final class ShortcutDaemonClient: @unchecked Sendable {
         _ reply: xpc_object_t,
         decode: (xpc_object_t) -> T
     ) -> Result<T, ShortcutError> {
-        guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY,
+        guard xpc_get_type(reply) == iGhostVTXPC.typeDictionary,
               xpc_dictionary_get_uint64(reply, iGhostVTWireKey.version) == iGhostVTProtocol.version,
               let code = iGhostVTReplyCode(rawValue: xpc_dictionary_get_int64(reply, iGhostVTWireKey.code))
         else {
@@ -386,18 +386,18 @@ final class ShortcutDaemonClient: @unchecked Sendable {
 
     private static func bool(_ object: xpc_object_t, _ key: String) -> Bool? {
         guard let value = xpc_dictionary_get_value(object, key),
-              xpc_get_type(value) == XPC_TYPE_BOOL else { return nil }
+              xpc_get_type(value) == iGhostVTXPC.typeBool else { return nil }
         return xpc_bool_get_value(value)
     }
 
     private static func sessions(in reply: xpc_object_t) -> [ShortcutSession] {
         guard let array = xpc_dictionary_get_value(reply, iGhostVTWireKey.sessions),
-              xpc_get_type(array) == XPC_TYPE_ARRAY
+              xpc_get_type(array) == iGhostVTXPC.typeArray
         else { return [] }
         var rows: [ShortcutSession] = []
         for index in 0 ..< xpc_array_get_count(array) {
             let row = xpc_array_get_value(array, index)
-            guard xpc_get_type(row) == XPC_TYPE_DICTIONARY else { continue }
+            guard xpc_get_type(row) == iGhostVTXPC.typeDictionary else { continue }
             rows.append(ShortcutSession(
                 id: xpc_dictionary_get_uint64(row, iGhostVTWireKey.sessionID),
                 title: string(row, iGhostVTWireKey.title) ?? "shell",

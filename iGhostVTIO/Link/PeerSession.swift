@@ -401,13 +401,13 @@ final class PeerSession {
     /// distinguishes them where `xpc_dictionary_get_uint64` would not.
     private func optionalUInt64(_ message: xpc_object_t, key: String) -> UInt64? {
         guard let value = xpc_dictionary_get_value(message, key),
-              xpc_get_type(value) == XPC_TYPE_UINT64 else { return nil }
+              xpc_get_type(value) == iGhostVTXPC.typeUInt64 else { return nil }
         return xpc_uint64_get_value(value)
     }
 
     private func stringArray(_ message: xpc_object_t, key: String) -> [String] {
         guard let array = xpc_dictionary_get_value(message, key),
-              xpc_get_type(array) == XPC_TYPE_ARRAY else { return [] }
+              xpc_get_type(array) == iGhostVTXPC.typeArray else { return [] }
         // Read every element: the length limit is `ShellLaunch.validate`'s to
         // refuse. Trimming here would run a different command than was asked.
         var values: [String] = []
@@ -420,10 +420,10 @@ final class PeerSession {
 
     private func stringDictionary(_ message: xpc_object_t, key: String) -> [String: String] {
         guard let dictionary = xpc_dictionary_get_value(message, key),
-              xpc_get_type(dictionary) == XPC_TYPE_DICTIONARY else { return [:] }
+              xpc_get_type(dictionary) == iGhostVTXPC.typeDictionary else { return [:] }
         var values: [String: String] = [:]
         xpc_dictionary_apply(dictionary) { entryKey, entryValue in
-            if xpc_get_type(entryValue) == XPC_TYPE_STRING,
+            if xpc_get_type(entryValue) == iGhostVTXPC.typeString,
                let string = xpc_string_get_string_ptr(entryValue)
             {
                 values[String(cString: entryKey)] = String(cString: string)

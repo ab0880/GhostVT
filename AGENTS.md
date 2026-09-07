@@ -680,6 +680,26 @@ Gotchas that bit us:
 - Never redeclare C-variadic functions (e.g. `ioctl`) via `@_silgen_name`
   with fixed arity — arm64 puts variadic args on the stack and the call
   silently misbehaves. Use the Darwin overlay.
+- **Never name an SDK `XPC_*` macro in Swift.** `XPC_TYPE_DICTIONARY` and its
+  siblings are libSystem globals that have existed since iOS 8, but the iOS 27
+  SDK also ships a Swift overlay for XPC, and in Swift those spellings resolve
+  to accessors exported by `/usr/lib/swift/libswiftXPC.dylib`. The overlay's
+  `.tbd` carries no back-deployment metadata, so ld links that dylib
+  **non-weakly** however low `IPHONEOS_DEPLOYMENT_TARGET` is — and the dylib
+  does not exist on iOS 15. dyld kills the process before `main`: "Library not
+  loaded: /usr/lib/swift/libswiftXPC.dylib". It is present from iOS 17.3.1;
+  iOS 16 is unverified. Reading the macros through C keeps them the old
+  globals, and with no overlay symbol used the linker marks libswiftXPC weak by
+  itself (only the weak `_swift_FORCE_LOAD_$_swiftXPC` reference is left).
+  `import XPC` alone is harmless. So the constants live in
+  `Shared/XPCShim/shim.h` as static inline C, reached through the
+  `CiGhostVTXPC` module (`SWIFT_INCLUDE_PATHS` in `Configuration/Base.xcconfig`,
+  `-I` in the harness), and Swift says `iGhostVTXPC.typeDictionary`
+  (`Shared/Protocol/iGhostVTXPC.swift`, compiled into all four targets).
+  `make check` fails on a Swift file that spells one; the folder is
+  deliberately not a synchronized group, so it joins no target's sources.
+  After a change here, prove it: `otool -L` must show libswiftXPC as
+  `, weak)` or absent on every product.
 - **Never hardcode a bootstrap path.** `RuntimeEnvironment` detects the layout
   from the daemon's own executable path and exposes the three vocabularies:
   `bootstrapPath()` (a file the bootstrap installed), `systemPath()` (a file

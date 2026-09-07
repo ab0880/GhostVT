@@ -134,7 +134,7 @@ final class DaemonClient {
         guard done.wait(timeout: .now() + Self.requestTimeout) == .success else {
             throw CLIError.timedOut
         }
-        guard let reply = received, xpc_get_type(reply) == XPC_TYPE_DICTIONARY else {
+        guard let reply = received, xpc_get_type(reply) == iGhostVTXPC.typeDictionary else {
             throw CLIError.daemonUnreachable
         }
         guard xpc_dictionary_get_uint64(reply, iGhostVTWireKey.version) == iGhostVTProtocol.version,
@@ -177,7 +177,7 @@ final class DaemonClient {
 
     static func sessions(in reply: xpc_object_t) -> [SessionSummary] {
         guard let array = xpc_dictionary_get_value(reply, iGhostVTWireKey.sessions),
-              xpc_get_type(array) == XPC_TYPE_ARRAY
+              xpc_get_type(array) == iGhostVTXPC.typeArray
         else { return [] }
         var summaries: [SessionSummary] = []
         for index in 0 ..< xpc_array_get_count(array) {
