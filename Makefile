@@ -106,7 +106,7 @@ ifeq ($(BUILD_NUMBER),)
 $(error CURRENT_PROJECT_VERSION is missing from Configuration/Version.xcconfig)
 endif
 
-.PHONY: all help print-version print-build-number print-deb-path print-mac-zip-path set-version check test harness build deb deb-roothide deb-rootless deb-xros deb-xros-rootless mac-app mac-daemon mac-daemon-uninstall mac-run mac-zip-check mac-zip mac-update-from-github release clean
+.PHONY: all help print-version print-build-number print-deb-path print-mac-zip-path set-version bump-build check test harness build deb deb-roothide deb-rootless deb-xros deb-xros-rootless mac-app mac-daemon mac-daemon-uninstall mac-run mac-zip-check mac-zip mac-update-from-github release clean
 
 all: deb
 
@@ -147,6 +147,14 @@ print-mac-zip-path:
 set-version:
 	@test -n "$(VERSION)" || { echo "usage: make set-version VERSION=1.2.3 [BUILD=42]" >&2; exit 64; }
 	@"$(VERSION_APPLIER)" "$(VERSION)" $(BUILD)
+
+# Every build gets its own number, so a device can say which build it runs.
+# CI is exempt: the workflow pins the build number to its run number, and a
+# bump there would ship an artifact that disagrees with the tag.
+bump-build:
+	@if [ -n "$${CI:-}" ]; then echo "==> CI: keeping build $(BUILD_NUMBER)"; else \
+		"$(VERSION_APPLIER)" "$(APP_VERSION)" $$(( $(BUILD_NUMBER) + 1 )) >/dev/null; \
+		echo "==> build $$(( $(BUILD_NUMBER) + 1 ))"; fi
 
 check:
 	@command -v xcodebuild >/dev/null || { echo "error: xcodebuild is required" >&2; exit 69; }
@@ -231,7 +239,7 @@ harness:
 		-o "$$harness_dir/cli-renderer" && \
 	"$$harness_dir/cli-renderer"
 
-build: check test
+build: check test bump-build
 	XCBUILD_LABEL=build-$(PLATFORM) $(DEVICE_XCODEBUILD) \
 		-configuration "$(CONFIGURATION)" \
 		-scheme "$(SCHEME)" \

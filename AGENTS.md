@@ -408,6 +408,8 @@ building *libghostty* locally does (see that repo's
 ## Build & verify
 
 - `make check` — project/packaging validation
+- `make build` bumps `CURRENT_PROJECT_VERSION` before xcodebuild, so
+  `Version.xcconfig` comes out of a build dirty by design
 - `make test` — the PTY harness *and* the CLI's screen-renderer tests
   (`make harness` builds `ighostvtd-io` and
   spawns it as the proxy's child over a real socket, then drives the whole
