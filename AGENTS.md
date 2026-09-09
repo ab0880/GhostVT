@@ -41,9 +41,11 @@ which launchd never sized — so a session's buffers cannot jetsam the daemon.
   for exactly this reason.
 - Depends on the **released**
   [libghostty-spm](https://github.com/Lakr233/libghostty-spm) package
-  (`upToNextMajor` from 1.5.20260906 — generated configs are scoped to the
-  host's bundle id; the `<major.minor>.<YYYYMMDD>` track began in
-  1.5.20260903, Ghostty c4e16970a on Zig 0.16, with
+  (`upToNextMajor` from 1.6.20260909, Ghostty 82938b63 on Zig 0.16 — the
+  text primitive is `paste(text:)`; the `sendText` spellings it replaced are
+  gone, and they never typed keystrokes anyway. Below that: generated configs
+  are scoped to the host's bundle id; the `<major.minor>.<YYYYMMDD>` track
+  began in 1.5.20260903, Ghostty c4e16970a, with
   precision scroll, pointer style via `UIPointerInteraction`, and clipboard
   reads through the shared pasteboard reader; below 1.5.2 the UIKit view's resize
   throttle is armed before any size was sent and a surface keeps the
