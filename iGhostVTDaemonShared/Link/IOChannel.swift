@@ -22,7 +22,7 @@ final class IOChannel {
     /// The outbound backlog changed size, in bytes.
     var onPendingChange: ((Int) -> Void)?
 
-    private(set) var pendingByteCount = 0
+    private var pendingByteCount = 0
 
     private let queue: DispatchQueue
     private var descriptor: Int32
@@ -36,8 +36,8 @@ final class IOChannel {
     private var outbound: [UInt8] = []
     private var outboundOffset = 0
 
-    /// Past this the inbound accumulator is handed back to the allocator
-    /// once drained, rather than kept for the next frame.
+    /// Past this a drained accumulator is handed back to the allocator
+    /// rather than kept for the next frame — for both directions.
     private static let retainedCapacity = 256 * 1024
 
     init(descriptor: Int32, queue: DispatchQueue) {
@@ -161,7 +161,7 @@ final class IOChannel {
     /// Stops taking frames off the socket until `resumeReading`. Balanced
     /// by a flag, so repeated calls are harmless.
     func suspendReading() {
-        guard !isReadSuspended, !isClosed, let readSource else { return }
+        guard !isReadSuspended, let readSource else { return }
         isReadSuspended = true
         readSource.suspend()
     }

@@ -21,6 +21,7 @@ set -euo pipefail
 
 repo="${GITHUB_REPOSITORY:-owngoal-dev/iGhostVT}"
 dest="/Applications/iGhostVT.app"
+installed_binary="$dest/Contents/MacOS/iGhostVT"
 label="wiki.qaq.ighostvtd"
 bundle_id="wiki.qaq.iGhostVT"
 digest_key="MacLaunchAgent.registeredHelperDigest"
@@ -114,12 +115,12 @@ echo "==> quitting the installed app"
 # Path-scoped: a plain killall iGhostVT would also take down the Simulator.
 osascript -e "tell application id \"$bundle_id\" to quit" >/dev/null 2>&1 || true
 for _ in $(seq 1 20); do
-    pgrep -f "$dest/Contents/MacOS/iGhostVT" >/dev/null || break
+    pgrep -f "$installed_binary" >/dev/null || break
     sleep 0.25
 done
-if pgrep -f "$dest/Contents/MacOS/iGhostVT" >/dev/null; then
+if pgrep -f "$installed_binary" >/dev/null; then
     echo "    force-quitting (a dialog was probably up)"
-    pkill -f "$dest/Contents/MacOS/iGhostVT" || true
+    pkill -f "$installed_binary" || true
     sleep 0.5
 fi
 

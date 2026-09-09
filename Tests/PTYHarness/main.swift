@@ -449,7 +449,6 @@ print("bootstrap path resolution")
 // found and every mapping degrades to identity — the same stub behaviour
 // roothide's own API has on a rootful system.
 check(RuntimeEnvironment.bootstrap == .none, "no bootstrap is detected off-device")
-check(RuntimeEnvironment.path == nil, "so there is no install prefix")
 check(
     RuntimeEnvironment.resolve("/bin/sh") == "/bin/sh",
     "resolution is identity without a bootstrap"
@@ -536,11 +535,7 @@ print("shell integration")
 /// session in a mode its rc files are not written for.
 var integrationEnvironment: [String: String] = ["HOME": "/tmp"]
 check(
-    ShellIntegration.apply(
-        shell: "/bin/bash",
-        to: &integrationEnvironment,
-        canModifyArguments: true
-    ).isEmpty,
+    ShellIntegration.apply(shell: "/bin/bash", to: &integrationEnvironment).isEmpty,
     "no scripts on disk means no arguments are added"
 )
 check(
@@ -552,11 +547,7 @@ check(
 /// before its first prompt.
 var shEnvironment: [String: String] = [:]
 check(
-    ShellIntegration.apply(
-        shell: "/bin/sh",
-        to: &shEnvironment,
-        canModifyArguments: true
-    ).isEmpty && shEnvironment.isEmpty,
+    ShellIntegration.apply(shell: "/bin/sh", to: &shEnvironment).isEmpty && shEnvironment.isEmpty,
     "sh is left untouched"
 )
 

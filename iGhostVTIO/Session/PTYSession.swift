@@ -90,12 +90,12 @@ final class PTYSession {
     /// Where the child gave up, reported through the spawn pipe. Plain
     /// constants rather than an enum: the child may only make
     /// async-signal-safe calls, and these are read straight into raw memory.
+    /// The privilege drop is one step, not four: `setgroups`, `setgid`,
+    /// `setuid` and the uid re-check all end the session the same way, with
+    /// the same sentence and the same exit status.
     private static let stepChownTTY: Int32 = 1
-    private static let stepSetGroups: Int32 = 2
-    private static let stepSetGID: Int32 = 3
-    private static let stepSetUID: Int32 = 4
-    private static let stepVerifyUID: Int32 = 5
-    private static let stepExec: Int32 = 6
+    private static let stepDropPrivileges: Int32 = 2
+    private static let stepExec: Int32 = 3
 
     private static func systemMessage(_ code: Int32) -> String {
         String(cString: strerror(code))
@@ -141,8 +141,6 @@ final class PTYSession {
             "Unable to run \(executable) (\(systemMessage(code))). Check the default shell in Settings."
         case stepChownTTY:
             "Unable to set up the terminal for your account (\(systemMessage(code))). Try again."
-        case stepVerifyUID:
-            "Unable to start the terminal for your account (\(systemMessage(code))). Try again."
         default:
             "Unable to start the terminal for your account (\(systemMessage(code))). Try again."
         }
@@ -272,17 +270,17 @@ final class PTYSession {
                 }
                 _ = fchmod(STDIN_FILENO, 0o620)
                 if setgroups(1, &supplementaryGroups) != 0 {
-                    fail(Self.stepSetGroups)
+                    fail(Self.stepDropPrivileges)
                 }
                 if setgid(credentials.gid) != 0 {
-                    fail(Self.stepSetGID)
+                    fail(Self.stepDropPrivileges)
                 }
                 if setuid(credentials.uid) != 0 {
-                    fail(Self.stepSetUID)
+                    fail(Self.stepDropPrivileges)
                 }
                 // Belt and braces: if the uid did not actually change, refuse.
                 if getuid() != credentials.uid || geteuid() != credentials.uid {
-                    fail(Self.stepVerifyUID)
+                    fail(Self.stepDropPrivileges)
                 }
             }
             // After the privilege drop, so the directory has to be reachable

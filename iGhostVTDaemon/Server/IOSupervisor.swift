@@ -44,11 +44,11 @@ protocol IOPeer: AnyObject {
 ///   `inputPauseAboveByteCount` every peer's connection is suspended —
 ///   libxpc then holds the messages in the client — and resumed once the
 ///   child has drained it below `inputResumeBelowByteCount`.
-/// - **The child dying** fails every pending reply, cuts every peer (their
-///   sessions died with the child, and a reconnect is how the app finds
-///   out), and respawns it, paced so a crash loop does not become a spin.
-///   An exit of 0 after a forwarded `shutdown` is the one exit that is
-///   ours to follow.
+///
+/// The child dying fails every pending reply, cuts every peer (their
+/// sessions died with the child, and a reconnect is how the app finds out),
+/// and respawns it, paced so a crash loop does not become a spin. An exit of
+/// 0 after a forwarded `shutdown` is the one exit that is ours to follow.
 final class IOSupervisor {
     static let pauseAboveByteCount = 1 << 20
     static let resumeBelowByteCount = 256 * 1024
@@ -126,9 +126,7 @@ final class IOSupervisor {
     /// detach, not a kill — but nothing may be delivered to it any more.
     func peerGone(_ peerID: UInt64) {
         peers.removeValue(forKey: peerID)
-        for (tag, entry) in pending where entry.peer == peerID {
-            pending.removeValue(forKey: tag)
-        }
+        pending = pending.filter { $0.value.peer != peerID }
         if let bytes = inFlight.removeValue(forKey: peerID) {
             totalInFlight -= bytes
         }
@@ -161,12 +159,9 @@ final class IOSupervisor {
             nextTag &+= 1
             pending[tag] = PendingReply(peer: peer.peerID, completion: completion)
         }
-        guard channel.send(.request, peer: peer.peerID, tag: tag, object: message) else {
+        if !channel.send(.request, peer: peer.peerID, tag: tag, object: message), wantsReply {
             pending.removeValue(forKey: tag)
-            if wantsReply {
-                completion(Self.composeFailure(.invalidRequest, "Unable to reach the terminal helper. Try again."))
-            }
-            return
+            completion(Self.composeFailure(.invalidRequest, "Unable to reach the terminal helper. Try again."))
         }
     }
 
@@ -174,7 +169,8 @@ final class IOSupervisor {
 
     /// `byteCount` of output was handed to libxpc for `peerID`.
     func willSend(_ byteCount: Int, to peerID: UInt64) {
-        inFlight[peerID, default: 0] += byteCount
+        let held = (inFlight[peerID] ?? 0) + byteCount
+        inFlight[peerID] = held
         totalInFlight += byteCount
         if totalInFlight > Self.pauseAboveByteCount {
             channel?.suspendReading()
@@ -182,7 +178,7 @@ final class IOSupervisor {
                 startCongestionTimer(for: id)
             }
         }
-        if inFlight[peerID, default: 0] >= Self.peerCongestionByteCount, congestionTimers[peerID] == nil {
+        if held >= Self.peerCongestionByteCount, congestionTimers[peerID] == nil {
             startCongestionTimer(for: peerID)
         }
     }
@@ -229,7 +225,7 @@ final class IOSupervisor {
         timer.schedule(deadline: .now() + Self.peerCongestionGrace)
         timer.setEventHandler { [weak self] in
             guard let self else { return }
-            congestionTimers.removeValue(forKey: peerID)?.cancel()
+            cancelCongestionTimer(for: peerID)
             let held = inFlight[peerID] ?? 0
             peers[peerID]?.cutConnection(
                 reason: "\(held) bytes of output not taken in \(Self.peerCongestionGrace.seconds)s"

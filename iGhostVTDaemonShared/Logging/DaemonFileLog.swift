@@ -27,8 +27,11 @@ enum DaemonFileLog {
     )
     private static let processName = String(cString: getprogname())
 
-    /// mobile's Library/Logs does not exist until someone makes it.
-    private static let directoryReady: Bool = makeDirectory(directory(of: path))
+    /// mobile's Library/Logs does not exist until someone makes it. `path` is
+    /// always absolute, so everything before the last slash is its directory.
+    private static let directoryReady: Void = makeDirectory(
+        String(path[..<(path.lastIndex(of: "/") ?? path.startIndex)])
+    )
 
     static func log(_ message: String) {
         let line = "\(timestamp()) [\(getpid()) \(processName)] \(message)\n"
@@ -63,21 +66,15 @@ enum DaemonFileLog {
         return String(cString: buffer) + "." + padding + String(millis)
     }
 
-    private static func directory(of path: String) -> String {
-        guard let slash = path.lastIndex(of: "/") else { return "." }
-        return String(path[..<slash])
-    }
-
     /// `mkdir -p`: every missing component, existing ones left alone.
-    private static func makeDirectory(_ path: String) -> Bool {
+    private static func makeDirectory(_ path: String) {
         var current = ""
         for component in path.split(separator: "/") {
             current += "/" + component
             if mkdir(current, 0o755) != 0, errno != EEXIST {
-                return false
+                return
             }
         }
-        return true
     }
 
     /// The log, open for appending and rotated first when it is over size.

@@ -45,7 +45,7 @@ final class DaemonServer {
     )
 
     private var listener: xpc_connection_t?
-    private var peers: [ObjectIdentifier: PeerRelay] = [:]
+    private var peers: [UInt64: PeerRelay] = [:]
     private var nextPeerID: UInt64 = 1
 
     /// `ighostvtd-io` beside this executable: `/usr/libexec` on the device,
@@ -107,7 +107,7 @@ final class DaemonServer {
         ) { [weak self] peer in
             self?.peerInvalidated(peer)
         }
-        peers[ObjectIdentifier(peer)] = peer
+        peers[peerID] = peer
         peer.activate()
         DaemonLog.server.info("peer \(clientPID) connected as \(peerID), \(self.peers.count) peer(s)")
         DaemonFileLog.log("peer \(clientPID) connected as peer \(peerID), \(peers.count) peer(s)")
@@ -116,7 +116,7 @@ final class DaemonServer {
     /// The peer went away. Its sessions stay: detaching is not closing, and
     /// the next launch reattaches to them.
     private func peerInvalidated(_ peer: PeerRelay) {
-        peers.removeValue(forKey: ObjectIdentifier(peer))
+        peers.removeValue(forKey: peer.peerID)
         DaemonLog.server.info("peer gone, \(self.peers.count) peer(s) remain")
         DaemonFileLog.log("peer \(peer.peerID) gone, \(peers.count) peer(s) remain")
     }

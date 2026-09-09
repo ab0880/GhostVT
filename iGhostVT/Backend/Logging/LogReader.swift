@@ -115,31 +115,34 @@ enum LogReader {
     /// The log for `source`; for the app, `launch` picks a file (nil is this
     /// launch's).
     static func read(_ source: LogSource, launch: URL? = nil) -> LogDocument {
+        // The two sources differ in three facts — where the log says it is,
+        // which files hold it, and which format parses it — and in nothing
+        // else. A missing app journal leaves `urls` empty, which `tail`
+        // reports the same way it reports a file it could not open.
+        let location: String
+        let urls: [URL]
+        let parse: (String) -> [LogEntry]
         switch source {
         case .app:
             let url = launch ?? AppLog.currentFile
-            var document = LogDocument()
-            document.location = url?.path ?? AppLog.journalDirectory.path
-            guard let url, let text = tail(of: [url]) else {
-                document.unreadable = true
-                return document
-            }
-            document.entries = parseJournal(text)
-            document.categories = categories(in: document.entries)
-            return document
+            location = url?.path ?? AppLog.journalDirectory.path
+            urls = url.map { [$0] } ?? []
+            parse = parseJournal
         case .daemon:
-            var document = LogDocument()
-            document.location = iGhostVTProtocol.daemonLogPath
-            let urls = [iGhostVTProtocol.rotatedDaemonLogPath, iGhostVTProtocol.daemonLogPath]
+            location = iGhostVTProtocol.daemonLogPath
+            urls = [iGhostVTProtocol.rotatedDaemonLogPath, iGhostVTProtocol.daemonLogPath]
                 .map { URL(fileURLWithPath: $0) }
-            guard let text = tail(of: urls) else {
-                document.unreadable = true
-                return document
-            }
-            document.entries = parseDaemon(text)
-            document.categories = categories(in: document.entries)
+            parse = parseDaemon
+        }
+        var document = LogDocument()
+        document.location = location
+        guard let text = tail(of: urls) else {
+            document.unreadable = true
             return document
         }
+        document.entries = parse(text)
+        document.categories = categories(in: document.entries)
+        return document
     }
 
     /// The whole log as one file, for Share: the journal file itself, or

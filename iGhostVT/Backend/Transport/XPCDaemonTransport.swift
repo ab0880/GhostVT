@@ -510,7 +510,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
         let hello = Self.makeMessage(.hello)
         xpc_connection_send_message_with_reply(connection, hello, queue) { [weak self] reply in
             guard let self else { return }
-            guard replyCode(reply) == .success else {
+            guard Self.replyCode(of: reply) == .success else {
                 teardown(
                     reason: String(localized: "Unable to connect to the terminal helper. Restart iGhostVT and try again.")
                 )
@@ -529,7 +529,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
             xpc_dictionary_set_uint64(message, iGhostVTWireKey.sessionID, resumeSessionID)
             xpc_connection_send_message_with_reply(connection, message, queue) { [weak self] reply in
                 guard let self else { return }
-                if replyCode(reply) == .success {
+                if Self.replyCode(of: reply) == .success {
                     if settleDeferredEnd(sessionID: resumeSessionID) { return }
                     lock.locked { self.sessionID = resumeSessionID }
                     // The attach carried no size; the reply says which one
@@ -589,7 +589,7 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
         }
         xpc_connection_send_message_with_reply(connection, message, queue) { [weak self] reply in
             guard let self else { return }
-            let code = replyCode(reply)
+            let code = Self.replyCode(of: reply)
             guard code == .success else {
                 teardown(reason: Self.failureReason(reply, code: code))
                 return
@@ -721,10 +721,6 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
         return message
     }
 
-    private func replyCode(_ reply: xpc_object_t) -> iGhostVTReplyCode {
-        Self.replyCode(of: reply)
-    }
-
     private static func replyCode(of reply: xpc_object_t) -> iGhostVTReplyCode {
         guard xpc_get_type(reply) == iGhostVTXPC.typeDictionary,
               xpc_dictionary_get_uint64(reply, iGhostVTWireKey.version) == iGhostVTProtocol.version,
@@ -782,9 +778,8 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
         // on a path that asks for no reply at all. They take the generic
         // wording rather than inventing a sentence that would read as
         // nonsense in an error card.
-        case .success, .operationFailed, .inputBacklog:
+        case .success, .operationFailed, .inputBacklog, .invalidRequest:
             String(localized: "Unable to complete this action. Try again.")
-        case .invalidRequest: String(localized: "Unable to complete this action. Try again.")
         case .unsupportedVersion:
             String(localized: "iGhostVT and its terminal helper are different versions. Reinstall iGhostVT to update both.")
         case .handshakeRequired: String(localized: "The terminal connection is not ready. Try again.")

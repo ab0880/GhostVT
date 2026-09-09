@@ -171,7 +171,7 @@ enum AppMenus {
     // MARK: - Window
 
     private static func installWindowMenu(into builder: UIMenuBuilder) {
-        var gotoChildren: [UIMenuElement] = (1 ... 8).map { number in
+        var gotoChildren: [UIMenuElement] = (1 ... KeyShortcuts.numberedTabCount).map { number in
             command(#selector(AppCommandResponder.selectTab(_:)), propertyList: number - 1)
         }
         gotoChildren.append(command(#selector(AppCommandResponder.selectTab(_:)), propertyList: lastTabIndex))
@@ -244,7 +244,7 @@ enum AppMenus {
             action: action,
             input: shortcut.input,
             modifierFlags: shortcut.modifiers,
-            propertyList: shortcut.propertyList,
+            propertyList: "alias",
             attributes: .hidden
         )
     }

@@ -335,7 +335,7 @@ final class ScreenRenderer {
             scrollDown(parameter(0))
         case 0x72: // r
             let top = clampRow(parameter(0) - 1)
-            let bottom = clampRow(parameters.count > 1 ? parameter(1, default: rows) - 1 : rows - 1)
+            let bottom = clampRow(parameter(1, default: rows) - 1)
             if top < bottom {
                 scrollTop = top
                 scrollBottom = bottom
@@ -611,7 +611,7 @@ final class ScreenRenderer {
     /// What the screen is showing, trailing padding removed — the same
     /// shape the app's own "copy page as text" produces.
     func screenText() -> String {
-        Self.text(of: screen)
+        Self.lines(of: screen).lines.joined(separator: "\n")
     }
 
     /// Everything the buffer covers: the lines that scrolled off the top,
@@ -646,10 +646,6 @@ final class ScreenRenderer {
             outputStart: index(outputStartRow),
             promptStart: index(promptStartRow)
         )
-    }
-
-    private static func text(of grid: [[Character]]) -> String {
-        lines(of: grid).lines.joined(separator: "\n")
     }
 
     /// The grid's rows as text, trailing padding removed and the blank rows

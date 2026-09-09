@@ -298,6 +298,13 @@ struct RunCommandIntent: AppIntent {
                 sessionID = try await client.openSession(command: [], inheritDirectoryFrom: nil)
                 isNew = true
             }
+            // One spelling of "end the shell this intent opened", so the
+            // success and failure arms cannot drift apart and leak a session.
+            func endTemporarySession() async {
+                if isNew, !keepNewSession {
+                    try? await client.closeSession(sessionID)
+                }
+            }
             do {
                 if isNew {
                     // The new shell has to reach its prompt before it can
@@ -308,14 +315,10 @@ struct RunCommandIntent: AppIntent {
                     }
                 }
                 let output = try await Self.run(command, in: sessionID, client: client, deadline: deadline)
-                if isNew, !keepNewSession {
-                    try? await client.closeSession(sessionID)
-                }
+                await endTemporarySession()
                 return output
             } catch {
-                if isNew, !keepNewSession {
-                    try? await client.closeSession(sessionID)
-                }
+                await endTemporarySession()
                 throw error
             }
         }

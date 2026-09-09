@@ -51,15 +51,6 @@ enum RuntimeEnvironment {
         /// A randomly named jbroot whose programs are vroot-linked.
         case roothide(jbroot: String)
 
-        /// The install root, or `nil` when there is no prefix.
-        var prefix: String? {
-            switch self {
-            case .none: nil
-            case let .rootless(prefix): prefix
-            case let .roothide(jbroot): jbroot
-            }
-        }
-
         /// How the bootstrap's own programs spell one of *its* files.
         ///
         /// Unprefixed under roothide — vroot resolves it against the jbroot
@@ -91,11 +82,6 @@ enum RuntimeEnvironment {
     }
 
     static let bootstrap: Bootstrap = detect()
-
-    /// The install root, or `nil` when running without one.
-    static var path: String? {
-        bootstrap.prefix
-    }
 
     static func bootstrapPath(_ path: String) -> String {
         bootstrap.bootstrapPath(path)

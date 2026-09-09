@@ -80,11 +80,7 @@ private struct IslandSummary: View {
                         .opacity(0.5)
                 }
             }
-            StatusBar(
-                live: state.liveCount,
-                starting: state.startingCount,
-                failed: state.failedCount
-            )
+            StatusBar(state: state)
             if let summary = state.summaryLine {
                 Text(summary)
                     .font(.subheadline)

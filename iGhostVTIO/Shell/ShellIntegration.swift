@@ -45,11 +45,7 @@ enum ShellIntegration {
     /// one nobody ships an integration for — the session then runs exactly
     /// as it did before, and the app falls back to guessing a title from
     /// what the user types.
-    static func apply(
-        shell: String,
-        to environment: inout [String: String],
-        canModifyArguments: Bool
-    ) -> [String] {
+    static func apply(shell: String, to environment: inout [String: String]) -> [String] {
         let resources = resourcesDirectory
         guard directoryExists(resources + "/shell-integration") else { return [] }
 
@@ -67,10 +63,7 @@ enum ShellIntegration {
 
         case "bash":
             // bash only reads $ENV in POSIX mode, so the integration has to
-            // start it there and undo it from inside the script — which
-            // means an extra argument, so a caller that cannot shape argv
-            // (a verbatim user command) gets no bash integration.
-            guard canModifyArguments else { return [] }
+            // start it there and undo it from inside the script.
             let script = resources + "/shell-integration/bash/ghostty.bash"
             guard fileExists(script) else { return [] }
             if let existing = environment["ENV"] {

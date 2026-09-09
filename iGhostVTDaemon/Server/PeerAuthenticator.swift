@@ -27,21 +27,16 @@ import XPC
 ///   loosened by the existence of a Mac build.
 final class PeerAuthenticator {
     private static let mobileUserID: UInt32 = 501
-    /// `platform-application` used to be required here too. It was never
-    /// load-bearing: it attests that a binary is signed as part of the
-    /// platform, not that it is *this* client, which is what the path and
-    /// ownership checks below establish. Requiring it forced the app to
-    /// carry an entitlement that tightens the app's own sandbox and buys
-    /// this side nothing, so the app dropped it and so did this list.
-    private static let requiredEntitlements = [
-        iGhostVTProtocol.clientEntitlement,
-    ]
 
     private lazy var installedClientPaths = resolveInstalledClientPaths()
 
     func authenticate(_ connection: xpc_connection_t) -> Int32? {
         var token = audit_token_t()
         ighostvtXPCConnectionGetAuditToken(connection, &token)
+        // audit_token_t.val: [0] auid, [1] euid, [2] egid, [3] ruid,
+        // [4] rgid, [5] pid, [6] asid, [7] pidversion. The libbsm accessors
+        // (`audit_token_to_pid`, `audit_token_to_euid`) are macros the Swift
+        // overlay does not surface, so the offsets are read directly.
         let pid = Int32(bitPattern: token.val.5)
         let uid = token.val.1
         guard pid > 1 else {
@@ -75,7 +70,7 @@ final class PeerAuthenticator {
                 deny(pid, "executable path unreadable")
                 return nil
             }
-            guard hasRequiredEntitlements(token: &token) else {
+            guard hasClientEntitlement(token: &token) else {
                 deny(pid, "missing client entitlement")
                 return nil
             }
@@ -112,15 +107,17 @@ final class PeerAuthenticator {
         }
     }
 
-    private func hasRequiredEntitlements(token: inout audit_token_t) -> Bool {
-        Self.requiredEntitlements.allSatisfy { entitlement in
-            let value = entitlement.withCString {
-                ighostvtXPCCopyEntitlement($0, &token)
-            }
-            return value.map {
-                xpc_get_type($0) == iGhostVTXPC.typeBool && xpc_bool_get_value($0)
-            } ?? false
+    /// `platform-application` used to be required here too. It was never
+    /// load-bearing: it attests that a binary is signed as part of the
+    /// platform, not that it is *this* client, which is what the path and
+    /// ownership checks establish. Requiring it forced the app to carry an
+    /// entitlement that tightens the app's own sandbox and buys this side
+    /// nothing, so the app dropped it and so did this check.
+    private func hasClientEntitlement(token: inout audit_token_t) -> Bool {
+        let value = iGhostVTProtocol.clientEntitlement.withCString {
+            ighostvtXPCCopyEntitlement($0, &token)
         }
+        return value.map { xpc_get_type($0) == iGhostVTXPC.typeBool && xpc_bool_get_value($0) } ?? false
     }
 
     private func isRootOwnedExecutable(_ path: String) -> Bool {
@@ -191,13 +188,14 @@ final class PeerAuthenticator {
             let siblingPath: String?
         }
 
-        /// Team identifier of the daemon's own signature, `nil` when ad-hoc.
-        private let teamIdentifier: String?
+        /// True when the daemon's own signature names no team, which is what
+        /// makes the sibling-path check load-bearing.
+        private let isAdHocSigned: Bool
         private let admissions: [Admission]
 
         private init() {
             let team = Self.ownTeamIdentifier()
-            teamIdentifier = team
+            isAdHocSigned = team == nil
 
             var built: [Admission] = []
             for client in Self.clients {
@@ -262,7 +260,7 @@ final class PeerAuthenticator {
                     lastStatus = status
                     continue
                 }
-                guard teamIdentifier == nil else { return nil }
+                guard isAdHocSigned else { return nil }
                 guard let siblingPath = admission.siblingPath else {
                     return "this daemon is ad-hoc signed and is not inside an app bundle"
                 }

@@ -12,8 +12,10 @@ import WidgetKit
 /// arbitrarily ugly — so the card shows only what the app controls: counts,
 /// statuses, and the frontmost shell's name.
 ///
-/// The lock screen and the expanded island both render this, identically.
-struct SessionSummaryCard: View {
+/// Rendered on the lock screen only; the island has its own trimmed rendition.
+struct LockScreenView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let state: TerminalSessionAttributes.ContentState
 
     var body: some View {
@@ -38,20 +40,13 @@ struct SessionSummaryCard: View {
                             .font(.subheadline)
                             .opacity(0.5)
                     }
-                    StatusBar(
-                        live: state.liveCount,
-                        starting: state.startingCount,
-                        failed: state.failedCount
-                    )
+                    StatusBar(state: state)
                     HStack(alignment: .top, spacing: Spacing.card) {
                         if let running = state.runningSummary {
                             InfoPair(label: "Status", value: running)
                         }
                         if state.detachedCount > 0 {
-                            InfoPair(
-                                label: "Detached",
-                                value: "\(state.detachedCount)"
-                            )
+                            InfoPair(label: "Detached", value: "\(state.detachedCount)")
                         }
                     }
                 }
@@ -64,31 +59,18 @@ struct SessionSummaryCard: View {
         .padding(Spacing.card)
         .fontDesign(.rounded)
         .animation(.easeInOut(duration: 0.35), value: state)
-    }
-}
-
-/// The card in its lock screen dress.
-struct LockScreenView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let state: TerminalSessionAttributes.ContentState
-
-    var body: some View {
-        SessionSummaryCard(state: state)
-            .activityBackgroundTint(colorScheme == .dark ? .black : .white)
-            .activitySystemActionForegroundColor(Palette.accent)
+        .activityBackgroundTint(colorScheme == .dark ? .black : .white)
+        .activitySystemActionForegroundColor(Palette.accent)
     }
 }
 
 /// Tesla's charge bar, repurposed: one segment per status, sized by its
 /// share of the listed sessions. All green means all live.
 struct StatusBar: View {
-    let live: Int
-    let starting: Int
-    let failed: Int
+    let state: TerminalSessionAttributes.ContentState
 
     private var total: Int {
-        live + starting + failed
+        state.liveCount + state.startingCount + state.failedCount
     }
 
     var body: some View {
@@ -98,19 +80,16 @@ struct StatusBar: View {
                     .fill(.primary.opacity(0.12))
             } else {
                 let groups: [(color: Color, count: Int)] = [
-                    (Palette.accent, live),
-                    (Palette.starting, starting),
-                    (Palette.failed, failed),
+                    (Palette.accent, state.liveCount),
+                    (Palette.starting, state.startingCount),
+                    (Palette.failed, state.failedCount),
                 ].filter { $0.1 > 0 }
                 let gaps = CGFloat(groups.count - 1) * Spacing.line
                 HStack(spacing: Spacing.line) {
                     ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
                         Capsule()
                             .fill(group.color)
-                            .frame(
-                                width: (geo.size.width - gaps)
-                                    * CGFloat(group.count) / CGFloat(total)
-                            )
+                            .frame(width: (geo.size.width - gaps) * CGFloat(group.count) / CGFloat(total))
                     }
                 }
             }
@@ -164,22 +143,13 @@ extension TerminalSessionAttributes.ContentState {
     var runningSummary: String? {
         var parts: [String] = []
         if liveCount > 0 {
-            parts.append(String(
-                localized: "\(liveCount) live",
-                comment: "Sessions with a running shell"
-            ))
+            parts.append(String(localized: "\(liveCount) live", comment: "Sessions with a running shell"))
         }
         if startingCount > 0 {
-            parts.append(String(
-                localized: "\(startingCount) starting",
-                comment: "Sessions still spawning"
-            ))
+            parts.append(String(localized: "\(startingCount) starting", comment: "Sessions still spawning"))
         }
         if failedCount > 0 {
-            parts.append(String(
-                localized: "\(failedCount) failed",
-                comment: "Sessions whose transport gave up"
-            ))
+            parts.append(String(localized: "\(failedCount) failed", comment: "Sessions whose transport gave up"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

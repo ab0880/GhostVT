@@ -129,9 +129,9 @@ struct AdvancedSettingsView: View {
     }
 
     private var showsCustomShellPath: Bool {
-        isEditingCustomShell || availableShellPaths.map {
-            !shellPath.isEmpty && !$0.contains(shellPath)
-        } == true
+        if isEditingCustomShell { return true }
+        guard let availableShellPaths, !shellPath.isEmpty else { return false }
+        return !availableShellPaths.contains(shellPath)
     }
 
     private func loadAvailableShellPaths() {

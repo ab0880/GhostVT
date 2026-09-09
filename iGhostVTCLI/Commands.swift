@@ -6,12 +6,12 @@ import XPC
 /// hello, asks its question, and goes away — the CLI attaches to nothing,
 /// so a session the app is showing keeps its tab while this runs.
 enum Commands {
-    static func list() throws -> Int32 {
+    static func list() throws {
         let client = DaemonClient()
         try client.connect()
         defer { client.cancel() }
         let sessions = DaemonClient.sessions(in: try client.request(.listSessions))
-        guard !sessions.isEmpty else { return 0 }
+        guard !sessions.isEmpty else { return }
 
         var table: [[String]] = [["SID", "PROCESS", "SIZE", "ATTACHED", "CWD"]]
         for session in sessions {
@@ -23,7 +23,7 @@ enum Commands {
                 session.currentDirectory ?? "-",
             ])
         }
-        let widths = (0 ..< 5).map { column in table.map { $0[column].count }.max() ?? 0 }
+        let widths = (0 ..< table[0].count).map { column in table.map { $0[column].count }.max() ?? 0 }
         for row in table {
             var line = ""
             for (column, field) in row.enumerated() {
@@ -37,10 +37,9 @@ enum Commands {
             }
             print(line.trimmedTrailingSpaces())
         }
-        return 0
     }
 
-    static func capture(sessionID: UInt64, full: Bool) throws -> Int32 {
+    static func capture(sessionID: UInt64, full: Bool) throws {
         let client = DaemonClient()
         try client.connect()
         defer { client.cancel() }
@@ -60,10 +59,9 @@ enum Commands {
         if !text.isEmpty {
             print(text)
         }
-        return 0
     }
 
-    static func send(sessionID: UInt64, input: [UInt8]) throws -> Int32 {
+    static func send(sessionID: UInt64, input: [UInt8]) throws {
         let client = DaemonClient()
         try client.connect()
         defer { client.cancel() }
@@ -72,7 +70,7 @@ enum Commands {
         // comes near one chunk; a `text` argument read from a file might.
         // Nothing to send (`text ""`) is a no-op, as in the app: the daemon
         // reads a zero-length `data` as absent and refuses the request.
-        guard !input.isEmpty else { return 0 }
+        guard !input.isEmpty else { return }
         var offset = 0
         repeat {
             let end = min(input.count, offset + iGhostVTProtocol.inputChunkByteCount)
@@ -85,10 +83,9 @@ enum Commands {
             }
             offset = end
         } while offset < input.count
-        return 0
     }
 
-    static func new(command: [String]) throws -> Int32 {
+    static func new(command: [String]) throws {
         let client = DaemonClient()
         try client.connect()
         defer { client.cancel() }
@@ -107,10 +104,9 @@ enum Commands {
             xpc_dictionary_set_value(message, iGhostVTWireKey.command, arguments)
         }
         print(xpc_dictionary_get_uint64(reply, iGhostVTWireKey.sessionID))
-        return 0
     }
 
-    static func kill(sessionID: UInt64) throws -> Int32 {
+    static func kill(sessionID: UInt64) throws {
         let client = DaemonClient()
         try client.connect()
         defer { client.cancel() }
@@ -125,7 +121,7 @@ enum Commands {
         while Date() < deadline {
             let sessions = DaemonClient.sessions(in: try client.request(.listSessions))
             if !sessions.contains(where: { $0.id == sessionID }) {
-                return 0
+                return
             }
             usleep(100_000)
         }

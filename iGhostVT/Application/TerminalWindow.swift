@@ -91,7 +91,7 @@ final class TerminalWindow: UIWindow, AppCommandResponder {
             return !isShowingModal && traitCollection.horizontalSizeClass == .regular
         case #selector(selectTab(_:)):
             guard hasActiveTab, let index = Self.tabIndex(of: sender) else { return false }
-            return index == AppMenus.lastTabIndex || index < tabManager.tabs.count
+            return tab(atCommandIndex: index) != nil
         case #selector(exportTabText(_:)),
              #selector(increaseFontSize(_:)),
              #selector(decreaseFontSize(_:)),
@@ -144,6 +144,13 @@ final class TerminalWindow: UIWindow, AppCommandResponder {
         (sender as? UICommand)?.propertyList as? Int
     }
 
+    /// The tab a Go to Tab command names, or nil when its index has none.
+    private func tab(atCommandIndex index: Int) -> TerminalTab? {
+        let tabs = tabManager.tabs
+        if index == AppMenus.lastTabIndex { return tabs.last }
+        return tabs.indices.contains(index) ? tabs[index] : nil
+    }
+
     // MARK: - File
 
     func newTab(_: Any?) {
@@ -162,14 +169,6 @@ final class TerminalWindow: UIWindow, AppCommandResponder {
         tabManager.requestClose(tab)
     }
 
-    /// Whether another window of this app is on screen, so closing this one
-    /// leaves the app running.
-    private var hasOtherWindows: Bool {
-        UIApplication.shared.connectedScenes.contains { scene in
-            scene !== windowScene && scene.activationState != .unattached
-        }
-    }
-
     /// The Mac quits through AppKit's `terminate:` when this was the last
     /// window, so `applicationWillTerminate` runs as it does for ⌘Q — the
     /// system's own window close would leave an app with no window and no
@@ -178,6 +177,11 @@ final class TerminalWindow: UIWindow, AppCommandResponder {
     /// has only the one scene, is sent home.
     private func closeEmptyWindow() {
         #if targetEnvironment(macCatalyst)
+            // Another window of this app on screen: closing this one leaves
+            // the app running.
+            let hasOtherWindows = UIApplication.shared.connectedScenes.contains { scene in
+                scene !== windowScene && scene.activationState != .unattached
+            }
             if hasOtherWindows {
                 closeWindow(nil)
             } else {
@@ -259,14 +263,7 @@ final class TerminalWindow: UIWindow, AppCommandResponder {
     }
 
     func selectTab(_ sender: Any?) {
-        guard let index = Self.tabIndex(of: sender) else { return }
-        let tabs = tabManager.tabs
-        let tab: TerminalTab? = if index == AppMenus.lastTabIndex {
-            tabs.last
-        } else {
-            tabs.indices.contains(index) ? tabs[index] : nil
-        }
-        guard let tab else { return }
+        guard let index = Self.tabIndex(of: sender), let tab = tab(atCommandIndex: index) else { return }
         tabManager.activeTabID = tab.id
     }
 

@@ -112,7 +112,6 @@ struct SidebarView: View {
                 .font(DS.Font.caption)
                 .foregroundColor(.secondary)
             toggle
-                .id(-1)
         }
         .padding(.horizontal, DS.Padding.s)
         .padding(.vertical, DS.Padding.s)

@@ -103,8 +103,8 @@ final class PeerSession {
             case exitProcess
         }
 
-        var code: iGhostVTReplyCode
-        var then: Follow = .nothing
+        let code: iGhostVTReplyCode
+        let then: Follow
 
         init(_ code: iGhostVTReplyCode, then: Follow = .nothing) {
             self.code = code

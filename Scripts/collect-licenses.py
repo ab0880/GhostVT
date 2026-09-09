@@ -132,7 +132,8 @@ def package_entries(project, checkouts):
         location = pin["location"]
         url = location[:-4] if location.endswith(".git") else location
         package = url.rstrip("/").rsplit("/", 1)[-1]
-        version = pin.get("state", {}).get("version") or pin.get("state", {}).get("revision")
+        state = pin.get("state", {})
+        version = state.get("version") or state.get("revision")
         checkout = os.path.join(checkouts, package)
         if not os.path.isdir(checkout):
             fail(f"{package} is pinned in Package.resolved but has no checkout under {checkouts}")
@@ -166,6 +167,8 @@ def find_source_packages(build_dir):
     BUILD_DIR is Build/Products for a build and a deeper archive path for an
     archive, so walk up until the sibling appears."""
     directory = os.path.abspath(build_dir)
+    # Xcode nests BUILD_DIR at most this far below the derived-data root; past
+    # it the walk would leave derived data and test the user's home and /.
     for _ in range(8):
         candidate = os.path.join(directory, "SourcePackages")
         if os.path.isdir(os.path.join(candidate, "checkouts")):

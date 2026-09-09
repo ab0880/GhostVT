@@ -51,54 +51,43 @@ struct TabContextMenu: View {
     /// forms the tuple.
     @ViewBuilder
     private var lockControls: some View {
-        tabLockControl
+        lockControl($tab.isLocked, lock: "Lock Tab", lockImage: "lock", unlock: "Unlock Tab", unlockImage: "lock.open")
         // Not on the Mac: there is no software keyboard to lock, and the
         // empty-inputView trick deliberately lets hardware keys through —
         // which is every key a Mac has, so the lock read as broken there.
         #if !targetEnvironment(macCatalyst)
-            keyboardLockControl
+            lockControl(
+                $tab.isKeyboardLocked,
+                lock: "Lock Keyboard",
+                lockImage: "keyboard",
+                unlock: "Unlock Keyboard",
+                unlockImage: "keyboard"
+            )
         #endif
     }
 
     @ViewBuilder
-    private var tabLockControl: some View {
+    private func lockControl(
+        _ isLocked: Binding<Bool>,
+        lock: LocalizedStringKey,
+        lockImage: String,
+        unlock: LocalizedStringKey,
+        unlockImage: String
+    ) -> some View {
         if #available(iOS 16.0, *) {
-            Toggle(isOn: $tab.isLocked) {
-                Label("Lock Tab", systemImage: "lock")
+            Toggle(isOn: isLocked) {
+                Label(lock, systemImage: lockImage)
+            }
+        } else if isLocked.wrappedValue {
+            Button(action: { isLocked.wrappedValue = false }) {
+                Label(unlock, systemImage: unlockImage)
             }
         } else {
-            if tab.isLocked {
-                Button(action: { tab.isLocked = false }) {
-                    Label("Unlock Tab", systemImage: "lock.open")
-                }
-            } else {
-                Button(action: { tab.isLocked = true }) {
-                    Label("Lock Tab", systemImage: "lock")
-                }
+            Button(action: { isLocked.wrappedValue = true }) {
+                Label(lock, systemImage: lockImage)
             }
         }
     }
-
-    #if !targetEnvironment(macCatalyst)
-    @ViewBuilder
-    private var keyboardLockControl: some View {
-        if #available(iOS 16.0, *) {
-            Toggle(isOn: $tab.isKeyboardLocked) {
-                Label("Lock Keyboard", systemImage: "keyboard")
-            }
-        } else {
-            if tab.isKeyboardLocked {
-                Button(action: { tab.isKeyboardLocked = false }) {
-                    Label("Unlock Keyboard", systemImage: "keyboard")
-                }
-            } else {
-                Button(action: { tab.isKeyboardLocked = true }) {
-                    Label("Lock Keyboard", systemImage: "keyboard")
-                }
-            }
-        }
-    }
-    #endif
 
     // MARK: - The page as text
 

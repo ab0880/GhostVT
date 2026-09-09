@@ -99,9 +99,10 @@ func parse(_ arguments: [String]) throws -> Command {
 }
 
 func fail(_ error: Error) -> Never {
-    let message = (error as? CLIError)?.message ?? "\(error)"
+    let cliError = error as? CLIError
+    let message = cliError?.message ?? "\(error)"
     FileHandle.standardError.write(Data("ighostvt-cli: \(message)\n".utf8))
-    exit((error as? CLIError)?.exitCode ?? 1)
+    exit(cliError?.exitCode ?? 1)
 }
 
 // A write to a closed pipe (`ighostvt-cli capture 1 | head`) has to be an
@@ -109,24 +110,22 @@ func fail(_ error: Error) -> Never {
 signal(SIGPIPE, SIG_IGN)
 
 do {
-    let status: Int32
     switch try parse(Array(CommandLine.arguments.dropFirst())) {
     case .help:
         // Asked for, so it is the output, not a complaint about the input.
         print(usage)
-        status = 0
     case .list:
-        status = try Commands.list()
+        try Commands.list()
     case let .capture(sessionID, full):
-        status = try Commands.capture(sessionID: sessionID, full: full)
+        try Commands.capture(sessionID: sessionID, full: full)
     case let .send(sessionID, input):
-        status = try Commands.send(sessionID: sessionID, input: input)
+        try Commands.send(sessionID: sessionID, input: input)
     case let .new(command):
-        status = try Commands.new(command: command)
+        try Commands.new(command: command)
     case let .kill(sessionID):
-        status = try Commands.kill(sessionID: sessionID)
+        try Commands.kill(sessionID: sessionID)
     }
-    exit(status)
+    exit(0)
 } catch {
     fail(error)
 }

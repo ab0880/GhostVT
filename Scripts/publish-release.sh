@@ -25,10 +25,8 @@ shift || true
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "tag must look like v1.2.3 (got '$tag')"
 [[ "$#" -ge 1 ]] || die "usage: $0 <tag> <asset> [<asset> ...]"
 
-assets=()
 for asset in "$@"; do
     [[ -f "$asset" ]] || die "not a file: $asset"
-    assets+=("$asset")
 done
 
 repo="${GITHUB_REPOSITORY:-}"
@@ -37,17 +35,17 @@ if [[ -n "$repo" ]]; then
     repo_flag=(-R "$repo")
 fi
 
-echo "==> publishing ${#assets[@]} asset(s) to $tag"
+echo "==> publishing $# asset(s) to $tag"
 for attempt in 1 2 3 4 5; do
     # `${arr[@]+"${arr[@]}"}`: an empty array is an unbound variable under
     # bash 3.2's `set -u`, which is what /bin/bash is on a Mac.
     if gh release view ${repo_flag[@]+"${repo_flag[@]}"} "$tag" >/dev/null 2>&1; then
-        gh release upload ${repo_flag[@]+"${repo_flag[@]}"} "$tag" "${assets[@]}" --clobber && exit 0
+        gh release upload ${repo_flag[@]+"${repo_flag[@]}"} "$tag" "$@" --clobber && exit 0
     else
         gh release create ${repo_flag[@]+"${repo_flag[@]}"} "$tag" \
             --title "iGhostVT $tag" \
             --generate-notes \
-            "${assets[@]}" && exit 0
+            "$@" && exit 0
     fi
     echo "publish attempt ${attempt} failed; retrying in 20s" >&2
     sleep 20

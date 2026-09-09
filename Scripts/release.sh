@@ -80,7 +80,7 @@ for want in \
     "SHA256SUMS.macos"; do
     grep -qxF "$want" <<<"$assets" || die "release v$version is missing $want"
 done
-echo "    all six assets present"
+echo "    all release assets present"
 
 echo "==> dispatching the APT repository build"
 gh -R "$apt_repo" workflow run "$apt_workflow"

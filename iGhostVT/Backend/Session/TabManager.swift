@@ -101,16 +101,7 @@ final class TabManager: ObservableObject {
     /// one.
     @discardableResult
     func openTab(attachingTo sessionID: UInt64) -> TerminalTab {
-        let tab = makeTab(resume: sessionID)
-        withAnimation(Self.tabTransition) {
-            tabs.append(tab)
-            activeTabID = tab.id
-        }
-        if isSceneActive {
-            tab.store.noteSceneActive()
-        }
-        SessionActivityController.shared.refresh()
-        return tab
+        adopt(makeTab(resume: sessionID))
     }
 
     /// Only the active tab's surface draws. The panes keep every tab mounted
@@ -201,6 +192,23 @@ final class TabManager: ObservableObject {
         return tab
     }
 
+    /// Puts a freshly made tab in front: appended, activated, and — when the
+    /// scene is already up — told so, since a tab created after
+    /// `noteSceneActive()` gets no replay of it. The cold-launch resume batch
+    /// does not go through here: it appends several at once and notifies every
+    /// tab, not only the new ones.
+    private func adopt(_ tab: TerminalTab) -> TerminalTab {
+        withAnimation(Self.tabTransition) {
+            tabs.append(tab)
+            activeTabID = tab.id
+        }
+        if isSceneActive {
+            tab.store.noteSceneActive()
+        }
+        SessionActivityController.shared.refresh()
+        return tab
+    }
+
     /// The presenter answered the head of `clipboardRequests`.
     func finishClipboardRequest() {
         guard !clipboardRequests.isEmpty else { return }
@@ -215,16 +223,7 @@ final class TabManager: ObservableObject {
     /// the home as before.
     @discardableResult
     func newTab() -> TerminalTab {
-        let tab = makeTab(inheritDirectoryFrom: activeTab?.daemonSessionID)
-        withAnimation(Self.tabTransition) {
-            tabs.append(tab)
-            activeTabID = tab.id
-        }
-        if isSceneActive {
-            tab.store.noteSceneActive()
-        }
-        SessionActivityController.shared.refresh()
-        return tab
+        adopt(makeTab(inheritDirectoryFrom: activeTab?.daemonSessionID))
     }
 
     /// Closing the last tab leaves the window empty on purpose: the empty

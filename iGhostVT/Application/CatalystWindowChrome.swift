@@ -145,11 +145,11 @@ import UIKit
 
             hideDescendants(of: themeFrame, className: "NSTitlebarBackgroundView")
             hideDescendants(of: themeFrame, className: "NSScrollPocket")
-            guard let container = firstDescendant(of: themeFrame, className: "NSTitlebarContainerView") else {
+            guard let container = descendants(of: themeFrame, className: "NSTitlebarContainerView").first else {
                 return
             }
             hideDescendants(of: container, className: "NSVisualEffectView")
-            guard let titlebarView = firstDescendant(of: container, className: "NSTitlebarView") else {
+            guard let titlebarView = descendants(of: container, className: "NSTitlebarView").first else {
                 return
             }
             titlebarView.setValue(true, forKey: "wantsLayer")
@@ -158,30 +158,16 @@ import UIKit
             }
         }
 
+        /// Every view of that class under `root`, pre-order — a match's own
+        /// subviews included, since a hidden container can still hold one.
+        /// A class the runtime does not know yields none.
         @MainActor
-        private static func firstDescendant(of root: NSObject, className: String) -> NSObject? {
-            guard let cls = NSClassFromString(className) else { return nil }
-            func walk(_ view: NSObject) -> NSObject? {
-                if view.isKind(of: cls) {
-                    return view
-                }
-                guard let subviews = view.value(forKey: "subviews") as? [NSObject] else { return nil }
-                for sub in subviews {
-                    if let found = walk(sub) {
-                        return found
-                    }
-                }
-                return nil
-            }
-            return walk(root)
-        }
-
-        @MainActor
-        private static func hideDescendants(of root: NSObject, className: String) {
-            guard let cls = NSClassFromString(className) else { return }
+        private static func descendants(of root: NSObject, className: String) -> [NSObject] {
+            guard let cls = NSClassFromString(className) else { return [] }
+            var found: [NSObject] = []
             func walk(_ view: NSObject) {
                 if view.isKind(of: cls) {
-                    view.setValue(true, forKey: "hidden")
+                    found.append(view)
                 }
                 guard let subviews = view.value(forKey: "subviews") as? [NSObject] else { return }
                 for sub in subviews {
@@ -189,6 +175,14 @@ import UIKit
                 }
             }
             walk(root)
+            return found
+        }
+
+        @MainActor
+        private static func hideDescendants(of root: NSObject, className: String) {
+            for view in descendants(of: root, className: className) {
+                view.setValue(true, forKey: "hidden")
+            }
         }
 
         /// Centres the close, minimize, and zoom buttons on the top bar. With

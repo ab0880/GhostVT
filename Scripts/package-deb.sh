@@ -191,7 +191,6 @@ ldid -S"$daemon_entitlements" -Cadhoc "$installed_daemon_io"
 # entitlements file for why `no-sandbox` is not among them.
 ldid -S"$cli_entitlements" -Cadhoc "$installed_cli"
 ldid -e "$installed_app/$app_executable" >"$app_signed_entitlements"
-ldid -e "$installed_daemon" >"$daemon_signed_entitlements"
 
 # App extensions are separate Mach-Os with their own signature, so Xcode's is
 # as useless to us as the app's and the system refuses to load an appex whose
@@ -287,17 +286,22 @@ done
     exit 65
 }
 
-for entitlement in platform-application com.apple.private.security.no-sandbox \
-    com.apple.private.security.storage.AppBundles com.apple.private.security.storage.AppDataContainers; do
-    require_true "$daemon_signed_entitlements" "$entitlement"
+for signed_binary in "$installed_daemon" "$installed_daemon_io"; do
+    ldid -e "$signed_binary" >"$daemon_signed_entitlements"
+    for entitlement in platform-application com.apple.private.security.no-sandbox \
+        com.apple.private.security.storage.AppBundles com.apple.private.security.storage.AppDataContainers; do
+        require_true "$daemon_signed_entitlements" "$entitlement"
+    done
+    require_false "$daemon_signed_entitlements" com.apple.private.security.container-required
+    # Spawning belongs to the daemon alone: fail the build if either half of it
+    # ever picks up the client entitlement's counterpart by mistake. Both are
+    # signed with the same entitlements file, so both are asserted here rather
+    # than against whichever dump the loop happened to leave behind.
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :wiki.qaq.ighostvt.client' "$daemon_signed_entitlements" 2>/dev/null || true)" != true ]] || {
+        echo "error: $(basename "$signed_binary") must not carry the client entitlement" >&2
+        exit 65
+    }
 done
-require_false "$daemon_signed_entitlements" com.apple.private.security.container-required
-ldid -e "$installed_daemon_io" >"$daemon_signed_entitlements"
-for entitlement in platform-application com.apple.private.security.no-sandbox \
-    com.apple.private.security.storage.AppBundles com.apple.private.security.storage.AppDataContainers; do
-    require_true "$daemon_signed_entitlements" "$entitlement"
-done
-require_false "$daemon_signed_entitlements" com.apple.private.security.container-required
 
 # The CLI is the second peer the daemon admits by path. It needs the marker
 # and the lookup; everything the app or the daemon carry would be privilege
@@ -311,13 +315,6 @@ require_true "$cli_signed_entitlements" wiki.qaq.ighostvt.client
 require_unprivileged "$cli_signed_entitlements" ighostvt-cli
 [[ -z "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.iokit-user-client-class' "$cli_signed_entitlements" 2>/dev/null || true)" ]] || {
     echo "error: the CLI must not carry the GPU iokit-user-client-class list" >&2
-    exit 65
-}
-
-# Spawning belongs to the daemon alone: fail the build if the app ever picks
-# up the client entitlement's counterpart on the daemon side by mistake.
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :wiki.qaq.ighostvt.client' "$daemon_signed_entitlements" 2>/dev/null || true)" != true ]] || {
-    echo "error: the daemon must not carry the client entitlement" >&2
     exit 65
 }
 

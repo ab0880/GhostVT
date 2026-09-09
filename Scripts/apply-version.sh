@@ -29,13 +29,13 @@ root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 version_config="$root_dir/Configuration/Version.xcconfig"
 [[ -f "$version_config" ]] || { echo "error: missing $version_config" >&2; exit 66; }
 
-read_setting() {
-    awk -F= -v key="$1" '
-        $1 ~ "^[[:space:]]*"key"[[:space:]]*$" { gsub(/[[:space:]]/, "", $2); print $2; exit }
+read_current_project_version() {
+    awk -F= '
+        $1 ~ /^[[:space:]]*CURRENT_PROJECT_VERSION[[:space:]]*$/ { gsub(/[[:space:]]/, "", $2); print $2; exit }
     ' "$version_config"
 }
 
-[[ -n "$build_number" ]] || build_number="$(read_setting CURRENT_PROJECT_VERSION)"
+[[ -n "$build_number" ]] || build_number="$(read_current_project_version)"
 [[ -n "$build_number" ]] || { echo "error: CURRENT_PROJECT_VERSION is missing from Version.xcconfig" >&2; exit 65; }
 
 updated="$(mktemp "${TMPDIR:-/tmp}/ighostvt-version.XXXXXX")"

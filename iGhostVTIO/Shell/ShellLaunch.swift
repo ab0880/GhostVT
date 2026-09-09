@@ -238,11 +238,7 @@ enum ShellLaunch {
         environment["SHELL"] = shell
         // After `HOME`: bash's integration moves the history file relative to
         // it, and reads nothing this daemon sets afterwards.
-        let integrationArguments = ShellIntegration.apply(
-            shell: shell,
-            to: &environment,
-            canModifyArguments: true
-        )
+        let integrationArguments = ShellIntegration.apply(shell: shell, to: &environment)
         return Plan(
             command: [RuntimeEnvironment.resolve(shell)] + integrationArguments + ["-il"],
             environment: environment,

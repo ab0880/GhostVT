@@ -251,14 +251,12 @@ struct RootView: View {
         // lock. An overlay or modal alert owns first responder instead;
         // handing it to the terminal would leave the accessory bar up
         // under the card.
-        guard let tab = tabManager.activeTab, !tab.isLocked else {
-            focusedTabID = nil
-            return
-        }
-        if tabManager.closeRequest != nil
-            || !tabManager.clipboardRequests.isEmpty
-            || tab.isCoveredByStatusAlert
-        {
+        guard let tab = tabManager.activeTab,
+              !tab.isLocked,
+              tabManager.closeRequest == nil,
+              tabManager.clipboardRequests.isEmpty,
+              !tab.isCoveredByStatusAlert
+        else {
             focusedTabID = nil
             return
         }

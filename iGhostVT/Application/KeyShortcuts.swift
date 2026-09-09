@@ -44,9 +44,8 @@ struct KeyShortcut {
     let input: String
     let modifiers: UIKeyModifierFlags
     let group: ShortcutGroup
-    /// A tab index for Go to Tab; `"alias"` marks a hidden twin (see
-    /// `AppMenus.hidden`).
-    let propertyList: Any?
+    /// The tab index Go to Tab carries; `nil` for every other shortcut.
+    let propertyList: Int?
     let isHidden: Bool
 
     var defaultsKey: String { "Shortcut.\(id)" }
@@ -82,6 +81,10 @@ struct KeyShortcut {
 
 @MainActor
 enum KeyShortcuts {
+    /// How many tabs Go to Tab names by position (⌘1–⌘8); the ninth key is
+    /// Last Tab. `AppMenus` builds its submenu from the same count.
+    static let numberedTabCount = 8
+
     private typealias R = AppCommandResponder
 
     private static func L(_ key: String, _ comment: String) -> String {
@@ -103,7 +106,7 @@ enum KeyShortcuts {
     ) -> KeyShortcut {
         KeyShortcut(
             id: id, title: "", action: action, input: input, modifiers: modifiers,
-            group: group, propertyList: "alias", isHidden: true
+            group: group, propertyList: nil, isHidden: true
         )
     }
 
@@ -120,7 +123,7 @@ enum KeyShortcuts {
             listed("nextTab", L("Show Next Tab", "Menu item: activates the tab after the current one"), #selector(R.showNextTab(_:)), "\t", .control, .tabs),
             alias(of: "nextTab", #selector(R.showNextTab(_:)), "]", [.command, .shift], .tabs),
         ]
-        for number in 1 ... 8 {
+        for number in 1 ... numberedTabCount {
             list.append(listed(
                 "selectTab.\(number)",
                 String.localizedStringWithFormat(L("Tab %d", "Menu item: switches to the tab at this position; %d is the position"), number),
@@ -155,7 +158,7 @@ enum KeyShortcuts {
 
     static func shortcut(_ action: Selector, propertyList: Int? = nil) -> KeyShortcut {
         all.first {
-            $0.action == action && !$0.isHidden && ($0.propertyList as? Int) == propertyList
+            $0.action == action && !$0.isHidden && $0.propertyList == propertyList
         }!
     }
 
