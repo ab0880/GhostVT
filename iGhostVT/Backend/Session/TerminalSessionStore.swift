@@ -209,7 +209,10 @@ final class TerminalSessionStore: ObservableObject {
         // editor never saw the bytes that the dropped link ate.
         titleTracker.reset()
         let transport = makeTransport()
-        AppLog.info(.session, "connecting via \(transport.endpointDescription) sceneActive=\(isSceneActive) hasViewport=\(relay.hasViewport)")
+        AppLog.info(
+            .session,
+            "connecting via \(transport.endpointDescription) sceneActive=\(isSceneActive) hasViewport=\(relay.hasViewport)"
+        )
         // `relay` weak as well: the relay retains the transport, which
         // retains this closure. A strong capture would close that cycle and
         // defeat the transport's deinit, whose job is to cancel an XPC
@@ -340,7 +343,10 @@ final class TerminalSessionStore: ObservableObject {
             guard let self, firstOutputGeneration == generation,
                   status == .connected, !hasReceivedOutput else { return }
             isAwaitingFirstOutput = true
-            AppLog.info(.session, "no output \(Self.firstOutputGrace / 1_000_000) ms after connect; showing the shell pill")
+            AppLog.info(
+                .session,
+                "no output \(Self.firstOutputGrace / 1_000_000) ms after connect; showing the shell pill"
+            )
         }
     }
 

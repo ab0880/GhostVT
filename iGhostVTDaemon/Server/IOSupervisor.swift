@@ -395,7 +395,9 @@ final class IOSupervisor {
         guard !respawnScheduled else { return }
         respawnScheduled = true
         let elapsed = DispatchTime.now().uptimeNanoseconds &- lastSpawn.uptimeNanoseconds
-        let delay: DispatchTimeInterval = elapsed < UInt64(Self.respawnDelay.nanoseconds) ? Self.respawnDelay : .milliseconds(0)
+        let delay: DispatchTimeInterval = elapsed < UInt64(Self.respawnDelay.nanoseconds)
+            ? Self.respawnDelay
+            : .milliseconds(0)
         queue.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             respawnScheduled = false

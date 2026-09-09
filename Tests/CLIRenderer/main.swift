@@ -177,18 +177,32 @@ check(marked.outputStart == 1, "the output-start mark is the row the output begi
 check(marked.promptStart == 3, "the prompt-start mark is the row of the last prompt")
 let scrolled = marks(
     "one\r\ntwo\r\n\(escape)]133;C\u{7}three\r\nfour\r\nfive\r\n\(escape)]133;A\u{7}$ ",
-    columns: 20, rows: 3
+    columns: 20,
+    rows: 3
 )
 check(scrolled.lines == ["one", "two", "three", "four", "five", "$"], "a scrolled transcript keeps every line")
 check(scrolled.outputStart == 2 && scrolled.promptStart == 5, "and its marks are transcript indices, not screen rows")
 let leading = marks("\r\n\r\n\(escape)]133;C\u{7}out\r\n\(escape)]133;A\u{7}$ ")
-check(leading.lines == ["out", "$"] && leading.outputStart == 0 && leading.promptStart == 1, "blank rows trimmed off the top shift the indices with them")
+check(
+    leading.lines == ["out", "$"] && leading.outputStart == 0 && leading.promptStart == 1,
+    "blank rows trimmed off the top shift the indices with them"
+)
 let pending = marks("$ sleep\r\n\(escape)]133;C\u{7}")
 check(pending.lines == ["$ sleep"] && pending.outputStart == 1, "a mark on a still-blank row points past the last line")
 let alternate = marks("\(escape)]133;A\u{7}$ \(escape)[?1049h\(escape)]133;C\u{7}x\(escape)[?1049l")
-check(alternate.promptStart == 0 && alternate.outputStart == nil, "a mark on the alternate screen is not on the transcript")
-let erased = marks("\(escape)]133;C\u{7}gone\r\nx\r\n\(escape)[3J\(escape)[H\(escape)]133;A\u{7}$ ", columns: 20, rows: 2)
-check(erased.lines == ["$"] && erased.outputStart == nil && erased.promptStart == 0, "a mark whose row was erased with the scrollback is gone")
+check(
+    alternate.promptStart == 0 && alternate.outputStart == nil,
+    "a mark on the alternate screen is not on the transcript"
+)
+let erased = marks(
+    "\(escape)]133;C\u{7}gone\r\nx\r\n\(escape)[3J\(escape)[H\(escape)]133;A\u{7}$ ",
+    columns: 20,
+    rows: 2
+)
+check(
+    erased.lines == ["$"] && erased.outputStart == nil && erased.promptStart == 0,
+    "a mark whose row was erased with the scrollback is gone"
+)
 
 print("key names")
 check(KeyNames.bytes(for: "C-?") == [0x7F], "C-? is DEL")

@@ -92,66 +92,214 @@ enum KeyShortcuts {
     }
 
     private static func listed(
-        _ id: String, _ title: String, _ action: Selector, _ input: String,
-        _ modifiers: UIKeyModifierFlags, _ group: ShortcutGroup, propertyList: Int? = nil
+        _ id: String,
+        _ title: String,
+        _ action: Selector,
+        _ input: String,
+        _ modifiers: UIKeyModifierFlags,
+        _ group: ShortcutGroup,
+        propertyList: Int? = nil
     ) -> KeyShortcut {
         KeyShortcut(
-            id: id, title: title, action: action, input: input, modifiers: modifiers,
-            group: group, propertyList: propertyList, isHidden: false
+            id: id,
+            title: title,
+            action: action,
+            input: input,
+            modifiers: modifiers,
+            group: group,
+            propertyList: propertyList,
+            isHidden: false
         )
     }
 
     private static func alias(
-        of id: String, _ action: Selector, _ input: String, _ modifiers: UIKeyModifierFlags, _ group: ShortcutGroup
+        of id: String,
+        _ action: Selector,
+        _ input: String,
+        _ modifiers: UIKeyModifierFlags,
+        _ group: ShortcutGroup
     ) -> KeyShortcut {
         KeyShortcut(
-            id: id, title: "", action: action, input: input, modifiers: modifiers,
-            group: group, propertyList: nil, isHidden: true
+            id: id,
+            title: "",
+            action: action,
+            input: input,
+            modifiers: modifiers,
+            group: group,
+            propertyList: nil,
+            isHidden: true
         )
     }
 
     static let all: [KeyShortcut] = {
         var list: [KeyShortcut] = [
             // Tabs and windows.
-            listed("newTab", L("New Tab", "Menu item: opens a new terminal tab"), #selector(R.newTab(_:)), "t", .command, .tabs),
+            listed(
+                "newTab",
+                L("New Tab", "Menu item: opens a new terminal tab"),
+                #selector(R.newTab(_:)),
+                "t",
+                .command,
+                .tabs
+            ),
             alias(of: "newTab", #selector(R.newTab(_:)), "n", .command, .tabs),
-            listed("newWindow", L("New Window", "Menu item: opens a new window"), #selector(R.newWindow(_:)), "n", [.command, .shift], .tabs),
-            listed("closeTab", L("Close Tab", "Menu item: closes the active terminal tab"), #selector(R.closeTab(_:)), "w", .command, .tabs),
-            listed("closeWindow", L("Close Window", "Menu item: closes the window"), #selector(R.closeWindow(_:)), "w", [.command, .shift], .tabs),
-            listed("previousTab", L("Show Previous Tab", "Menu item: activates the tab before the current one"), #selector(R.showPreviousTab(_:)), "\t", [.control, .shift], .tabs),
+            listed(
+                "newWindow",
+                L("New Window", "Menu item: opens a new window"),
+                #selector(R.newWindow(_:)),
+                "n",
+                [.command, .shift],
+                .tabs
+            ),
+            listed(
+                "closeTab",
+                L("Close Tab", "Menu item: closes the active terminal tab"),
+                #selector(R.closeTab(_:)),
+                "w",
+                .command,
+                .tabs
+            ),
+            listed(
+                "closeWindow",
+                L("Close Window", "Menu item: closes the window"),
+                #selector(R.closeWindow(_:)),
+                "w",
+                [.command, .shift],
+                .tabs
+            ),
+            listed(
+                "previousTab",
+                L("Show Previous Tab", "Menu item: activates the tab before the current one"),
+                #selector(R.showPreviousTab(_:)),
+                "\t",
+                [.control, .shift],
+                .tabs
+            ),
             alias(of: "previousTab", #selector(R.showPreviousTab(_:)), "[", [.command, .shift], .tabs),
-            listed("nextTab", L("Show Next Tab", "Menu item: activates the tab after the current one"), #selector(R.showNextTab(_:)), "\t", .control, .tabs),
+            listed(
+                "nextTab",
+                L("Show Next Tab", "Menu item: activates the tab after the current one"),
+                #selector(R.showNextTab(_:)),
+                "\t",
+                .control,
+                .tabs
+            ),
             alias(of: "nextTab", #selector(R.showNextTab(_:)), "]", [.command, .shift], .tabs),
         ]
         for number in 1 ... numberedTabCount {
             list.append(listed(
                 "selectTab.\(number)",
-                String.localizedStringWithFormat(L("Tab %d", "Menu item: switches to the tab at this position; %d is the position"), number),
-                #selector(R.selectTab(_:)), String(number), .command, .tabs, propertyList: number - 1
+                String.localizedStringWithFormat(
+                    L("Tab %d", "Menu item: switches to the tab at this position; %d is the position"),
+                    number
+                ),
+                #selector(R.selectTab(_:)),
+                String(number),
+                .command,
+                .tabs,
+                propertyList: number - 1
             ))
         }
         list += [
-            listed("selectTab.last", L("Last Tab", "Menu item: switches to the last tab"), #selector(R.selectTab(_:)), "9", .command, .tabs, propertyList: AppMenus.lastTabIndex),
+            listed(
+                "selectTab.last",
+                L("Last Tab", "Menu item: switches to the last tab"),
+                #selector(R.selectTab(_:)),
+                "9",
+                .command,
+                .tabs,
+                propertyList: AppMenus.lastTabIndex
+            ),
             // Interface.
-            listed("settings", L("Settings… (menu)", "Menu item: opens the app's settings; the English text is “Settings…”"), #selector(R.showSettings(_:)), ",", .command, .interface),
-            listed("sidebar", L("Show Sidebar", "Menu item: shows the tab sidebar"), #selector(R.toggleTabSidebar(_:)), "s", [.command, .control], .interface),
+            listed(
+                "settings",
+                L("Settings… (menu)", "Menu item: opens the app's settings; the English text is “Settings…”"),
+                #selector(R.showSettings(_:)),
+                ",",
+                .command,
+                .interface
+            ),
+            listed(
+                "sidebar",
+                L("Show Sidebar", "Menu item: shows the tab sidebar"),
+                #selector(R.toggleTabSidebar(_:)),
+                "s",
+                [.command, .control],
+                .interface
+            ),
             alias(of: "sidebar", #selector(R.toggleTabSidebar(_:)), "l", [.command, .shift], .interface),
-            listed("switcher", L("Show All Tabs", "Menu item: opens the tab overview"), #selector(R.toggleTabSwitcher(_:)), "\\", [.command, .shift], .interface),
-            listed("exportText", L("Export Text…", "Menu item: shares the visible terminal text as a file"), #selector(R.exportTabText(_:)), "s", [.command, .shift], .interface),
-            listed("lockTab", L("Lock Tab", "Menu item: toggles the tab's input lock"), #selector(R.toggleTabLock(_:)), "l", [.command, .alternate], .interface),
+            listed(
+                "switcher",
+                L("Show All Tabs", "Menu item: opens the tab overview"),
+                #selector(R.toggleTabSwitcher(_:)),
+                "\\",
+                [.command, .shift],
+                .interface
+            ),
+            listed(
+                "exportText",
+                L("Export Text…", "Menu item: shares the visible terminal text as a file"),
+                #selector(R.exportTabText(_:)),
+                "s",
+                [.command, .shift],
+                .interface
+            ),
+            listed(
+                "lockTab",
+                L("Lock Tab", "Menu item: toggles the tab's input lock"),
+                #selector(R.toggleTabLock(_:)),
+                "l",
+                [.command, .alternate],
+                .interface
+            ),
         ]
         // The keyboard lock is not offered on the Mac (`TabContextMenu`
         // has the reasoning); neither is its key.
         #if !targetEnvironment(macCatalyst)
-            list.append(listed("lockKeyboard", L("Lock Keyboard", "Menu item: toggles the tab's keyboard lock"), #selector(R.toggleKeyboardLock(_:)), "k", [.command, .alternate], .interface))
+            list.append(listed(
+                "lockKeyboard",
+                L("Lock Keyboard", "Menu item: toggles the tab's keyboard lock"),
+                #selector(R.toggleKeyboardLock(_:)),
+                "k",
+                [.command, .alternate],
+                .interface
+            ))
         #endif
         list += [
             // Terminal.
-            listed("biggerText", L("Bigger", "Menu item: increases the terminal font size"), #selector(R.increaseFontSize(_:)), "+", .command, .terminal),
+            listed(
+                "biggerText",
+                L("Bigger", "Menu item: increases the terminal font size"),
+                #selector(R.increaseFontSize(_:)),
+                "+",
+                .command,
+                .terminal
+            ),
             alias(of: "biggerText", #selector(R.increaseFontSize(_:)), "=", .command, .terminal),
-            listed("smallerText", L("Smaller", "Menu item: decreases the terminal font size"), #selector(R.decreaseFontSize(_:)), "-", .command, .terminal),
-            listed("actualSize", L("Actual Size", "Menu item: resets the terminal font size"), #selector(R.resetFontSize(_:)), "0", .command, .terminal),
-            listed("clearScreen", L("Clear Screen", "Menu item: clears the terminal screen and scrollback"), #selector(R.clearScreen(_:)), "k", .command, .terminal),
+            listed(
+                "smallerText",
+                L("Smaller", "Menu item: decreases the terminal font size"),
+                #selector(R.decreaseFontSize(_:)),
+                "-",
+                .command,
+                .terminal
+            ),
+            listed(
+                "actualSize",
+                L("Actual Size", "Menu item: resets the terminal font size"),
+                #selector(R.resetFontSize(_:)),
+                "0",
+                .command,
+                .terminal
+            ),
+            listed(
+                "clearScreen",
+                L("Clear Screen", "Menu item: clears the terminal screen and scrollback"),
+                #selector(R.clearScreen(_:)),
+                "k",
+                .command,
+                .terminal
+            ),
         ]
         return list
     }()

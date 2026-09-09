@@ -57,8 +57,10 @@ import SwiftUI
                 Text("Preview")
                     .font(DS.Font.caption)
             } footer: {
-                Text("The bar above the keyboard shows these keys in this order. Scroll sideways if they do not all fit.")
-                    .font(DS.Font.detail)
+                Text(
+                    "The bar above the keyboard shows these keys in this order. Scroll sideways if they do not all fit."
+                )
+                .font(DS.Font.detail)
             }
         }
 
@@ -130,8 +132,10 @@ import SwiftUI
                 Text("More Keys")
                     .font(DS.Font.caption)
             } footer: {
-                Text("A custom key types the characters you enter, together with any modifier keys that are switched on.")
-                    .font(DS.Font.detail)
+                Text(
+                    "A custom key types the characters you enter, together with any modifier keys that are switched on."
+                )
+                .font(DS.Font.detail)
             }
         }
 

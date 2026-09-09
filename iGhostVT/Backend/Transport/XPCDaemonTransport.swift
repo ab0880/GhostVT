@@ -201,7 +201,9 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
 
     /// Runs on `queue`.
     private func sendResize(
-        columns: Int, rows: Int, over link: (connection: xpc_connection_t, sessionID: UInt64)
+        columns: Int,
+        rows: Int,
+        over link: (connection: xpc_connection_t, sessionID: UInt64)
     ) {
         if let applied = appliedViewport, applied.columns == columns, applied.rows == rows {
             return
@@ -337,7 +339,9 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
                 return
             }
             xpc_connection_send_message_with_reply(
-                link.connection, makeMessage(operation), queue
+                link.connection,
+                makeMessage(operation),
+                queue
             ) { reply in
                 xpc_connection_cancel(link.connection)
                 finished.finish(decode(reply))
@@ -476,7 +480,9 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
                     awaitGone(targets) { remaining in
                         guard stopDaemonWhenEmpty, remaining.isEmpty else { return finish() }
                         xpc_connection_send_message_with_reply(
-                            connection, makeMessage(.shutdown), queue
+                            connection,
+                            makeMessage(.shutdown),
+                            queue
                         ) { _ in
                             finish()
                         }
@@ -512,7 +518,9 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
             guard let self else { return }
             guard Self.replyCode(of: reply) == .success else {
                 teardown(
-                    reason: String(localized: "Unable to connect to the terminal helper. Restart iGhostVT and try again.")
+                    reason: String(
+                        localized: "Unable to connect to the terminal helper. Restart iGhostVT and try again."
+                    )
                 )
                 return
             }
@@ -781,7 +789,9 @@ final class XPCDaemonTransport: TerminalTransport, @unchecked Sendable {
         case .success, .operationFailed, .inputBacklog, .invalidRequest:
             String(localized: "Unable to complete this action. Try again.")
         case .unsupportedVersion:
-            String(localized: "iGhostVT and its terminal helper are different versions. Reinstall iGhostVT to update both.")
+            String(
+                localized: "iGhostVT and its terminal helper are different versions. Reinstall iGhostVT to update both."
+            )
         case .handshakeRequired: String(localized: "The terminal connection is not ready. Try again.")
         case .sessionLimitReached: String(localized: "Too many terminals are open. Close one and try again.")
         case .unknownSession: String(localized: "This terminal is no longer available.")

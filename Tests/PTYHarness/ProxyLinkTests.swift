@@ -252,7 +252,8 @@ func runCodecTests() {
         check(
             decodedArray.map { xpc_array_get_count($0) } == 2
                 && decodedArray.flatMap { xpc_array_get_string($0, 0) }.map { String(cString: $0) } == "one"
-                && decodedArray.map { xpc_uint64_get_value(xpc_dictionary_get_value(xpc_array_get_value($0, 1), "n")!) } == 7,
+                && decodedArray
+                .map { xpc_uint64_get_value(xpc_dictionary_get_value(xpc_array_get_value($0, 1), "n")!) } == 7,
             "an array of mixed values survives"
         )
         check(
@@ -278,7 +279,8 @@ func runCodecTests() {
     IOWire.appendHeader(IOWire.Header(kind: .reply, peer: 9, tag: 12345, payloadByteCount: encoded.count), to: &framed)
     let header = framed.withUnsafeBytes { IOWire.decodeHeader($0) }
     check(
-        header?.kind == .reply && header?.peer == 9 && header?.tag == 12345 && header?.payloadByteCount == encoded.count,
+        header?.kind == .reply && header?.peer == 9 && header?.tag == 12345
+            && header?.payloadByteCount == encoded.count,
         "a frame header round-trips"
     )
     framed[4] = 200
@@ -344,7 +346,8 @@ func runProxyLinkTests() {
     let sessionID = opened.map { xpc_dictionary_get_uint64($0, iGhostVTWireKey.sessionID) } ?? 0
     check(sessionID > 0, "the reply names the session")
     check(
-        opened.flatMap { xpc_dictionary_get_string($0, iGhostVTWireKey.processName) }.map { String(cString: $0) } == "sh",
+        opened.flatMap { xpc_dictionary_get_string($0, iGhostVTWireKey.processName) }
+            .map { String(cString: $0) } == "sh",
         "the reply states the foreground process"
     )
     check(
@@ -481,7 +484,8 @@ func runProxyLinkTests() {
         "the snapshot states the size"
     )
     check(
-        snapshot.flatMap { xpc_dictionary_get_string($0, iGhostVTWireKey.processName) }.map { String(cString: $0) } == "cat",
+        snapshot.flatMap { xpc_dictionary_get_string($0, iGhostVTWireKey.processName) }
+            .map { String(cString: $0) } == "cat",
         "the snapshot states the foreground process"
     )
     check(
@@ -575,7 +579,10 @@ func runProxyLinkTests() {
     let oneWordID = oneWord.map { xpc_dictionary_get_uint64($0, iGhostVTWireKey.sessionID) } ?? 0
     check(replyCode(oneWord) == .success && oneWordID > 0, "a one-word command opens")
     check(waitUntil { second.exitCode(of: oneWordID) != nil }, "and runs to its end")
-    check(second.exitCode(of: oneWordID) == 0, "as itself, not as `env -il` (exit \(String(describing: second.exitCode(of: oneWordID))))")
+    check(
+        second.exitCode(of: oneWordID) == 0,
+        "as itself, not as `env -il` (exit \(String(describing: second.exitCode(of: oneWordID))))"
+    )
     let printed = second.output(of: oneWordID)
     check(printed.contains("TERM=xterm-256color"), "a verbatim command sees TERM")
     check(printed.contains("TERM_PROGRAM=iGhostVT"), "and the terminal's identity")
@@ -596,13 +603,18 @@ func runProxyLinkTests() {
         }
         supervisor.forward(from: second, message: message, wantsReply: false) { _ in }
     }
-    check(waitUntil { second.output(of: chosenID).contains("shell:/bin/sh flags:") }, "the chosen shell answers as itself")
+    check(
+        waitUntil { second.output(of: chosenID).contains("shell:/bin/sh flags:") },
+        "the chosen shell answers as itself"
+    )
     let flags = second.output(of: chosenID)
         .components(separatedBy: "shell:/bin/sh flags:")
         .dropFirst()
         .first.map { $0.prefix { !$0.isNewline } } ?? ""
     check(flags.contains("i"), "and runs interactively, as a login shell does (flags: \(flags))")
-    _ = request(supervisor, from: second, .closeSession) { xpc_dictionary_set_uint64($0, iGhostVTWireKey.sessionID, chosenID) }
+    _ = request(supervisor, from: second, .closeSession) {
+        xpc_dictionary_set_uint64($0, iGhostVTWireKey.sessionID, chosenID)
+    }
     _ = waitUntil { listedRow(supervisor, from: second, sessionID: chosenID) == nil }
 
     // The first peer's connection drops: its sessions are detached, not
@@ -614,8 +626,13 @@ func runProxyLinkTests() {
     check(replyCode(attached) == .success, "after the peer is gone the session attaches elsewhere")
     var replayLength = 0
     let replay = attached.flatMap { xpc_dictionary_get_data($0, iGhostVTWireKey.data, &replayLength) }
-    let replayText = replay.map { String(decoding: UnsafeRawBufferPointer(start: $0, count: replayLength), as: UTF8.self) } ?? ""
-    check(replayText.contains("hello-from-io") && replayText.contains("ping-through-proxy"), "the attach reply replays the buffer")
+    let replayText = replay.map {
+        String(decoding: UnsafeRawBufferPointer(start: $0, count: replayLength), as: UTF8.self)
+    } ?? ""
+    check(
+        replayText.contains("hello-from-io") && replayText.contains("ping-through-proxy"),
+        "the attach reply replays the buffer"
+    )
     harnessQueue.async {
         let message = makeRequest(.write) { message in
             xpc_dictionary_set_uint64(message, iGhostVTWireKey.sessionID, sessionID)
@@ -640,7 +657,8 @@ func runProxyLinkTests() {
     check(
         waitUntil {
             let listed = request(supervisor, from: second, .listSessions)
-            return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }.map { xpc_array_get_count($0) } == 0
+            return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }
+                .map { xpc_array_get_count($0) } == 0
         },
         "the closed session leaves the list"
     )
@@ -696,7 +714,8 @@ func runProxyLinkTests() {
     // never blocked or killed by its first peer going away.
     let reattachReplay: String = {
         var length = 0
-        guard let bytes = reattached.flatMap({ xpc_dictionary_get_data($0, iGhostVTWireKey.data, &length) }) else { return "" }
+        guard let bytes = reattached.flatMap({ xpc_dictionary_get_data($0, iGhostVTWireKey.data, &length) })
+        else { return "" }
         return String(decoding: UnsafeRawBufferPointer(start: bytes, count: length), as: UTF8.self)
     }()
     check(
@@ -713,7 +732,8 @@ func runProxyLinkTests() {
     )
     _ = waitUntil {
         let listed = request(supervisor, from: observer, .listSessions)
-        return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }.map { xpc_array_get_count($0) } == 0
+        return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }
+            .map { xpc_array_get_count($0) } == 0
     }
 
     // The pause is one decision for the socket, the timer was one per peer:
@@ -769,12 +789,15 @@ func runProxyLinkTests() {
     {
         for index in 0 ..< xpc_array_get_count(rows) {
             let id = xpc_dictionary_get_uint64(xpc_array_get_value(rows, index), iGhostVTWireKey.sessionID)
-            _ = request(supervisor, from: afterCrowd, .closeSession) { xpc_dictionary_set_uint64($0, iGhostVTWireKey.sessionID, id) }
+            _ = request(supervisor, from: afterCrowd, .closeSession) {
+                xpc_dictionary_set_uint64($0, iGhostVTWireKey.sessionID, id)
+            }
         }
     }
     _ = waitUntil {
         let listed = request(supervisor, from: afterCrowd, .listSessions)
-        return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }.map { xpc_array_get_count($0) } == 0
+        return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }
+            .map { xpc_array_get_count($0) } == 0
     }
 
     // The other direction. A paste arrives as back-to-back messages at mach
@@ -809,7 +832,9 @@ func runProxyLinkTests() {
         for _ in 0 ..< burstChunkCount {
             let message = makeRequest(.write) { message in
                 xpc_dictionary_set_uint64(message, iGhostVTWireKey.sessionID, sinkID)
-                burstChunk.withUnsafeBytes { xpc_dictionary_set_data(message, iGhostVTWireKey.data, $0.baseAddress!, $0.count) }
+                burstChunk.withUnsafeBytes {
+                    xpc_dictionary_set_data(message, iGhostVTWireKey.data, $0.baseAddress!, $0.count)
+                }
             }
             supervisor.forward(from: paster, message: message, wantsReply: false) { _ in }
         }
@@ -848,7 +873,8 @@ func runProxyLinkTests() {
     )
     let afterCrash = request(supervisor, from: replacement, .listSessions)
     check(
-        afterCrash.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }.map { xpc_array_get_count($0) } == 0,
+        afterCrash.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }
+            .map { xpc_array_get_count($0) } == 0,
         "the replacement starts empty"
     )
 
@@ -863,7 +889,10 @@ func runProxyLinkTests() {
     }
     let heldID = held.map { xpc_dictionary_get_uint64($0, iGhostVTWireKey.sessionID) } ?? 0
     check(replyCode(held) == .success, "a session opens on the replacement")
-    check(replyCode(request(supervisor, from: replacement, .shutdown)) == .sessionBusy, "shutdown with a session held is busy")
+    check(
+        replyCode(request(supervisor, from: replacement, .shutdown)) == .sessionBusy,
+        "shutdown with a session held is busy"
+    )
     check(
         replyCode(request(supervisor, from: replacement, .closeSession) {
             xpc_dictionary_set_uint64($0, iGhostVTWireKey.sessionID, heldID)
@@ -872,10 +901,14 @@ func runProxyLinkTests() {
     )
     _ = waitUntil {
         let listed = request(supervisor, from: replacement, .listSessions)
-        return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }.map { xpc_array_get_count($0) } == 0
+        return listed.flatMap { xpc_dictionary_get_value($0, iGhostVTWireKey.sessions) }
+            .map { xpc_array_get_count($0) } == 0
     }
     let lastChild = supervisor.childProcessID
-    check(replyCode(request(supervisor, from: replacement, .shutdown)) == .success, "shutdown with nothing held succeeds")
+    check(
+        replyCode(request(supervisor, from: replacement, .shutdown)) == .success,
+        "shutdown with nothing held succeeds"
+    )
     check(waitUntil { shutdownFollowed }, "the proxy follows io's exit after shutdown")
     check(waitUntil { kill(lastChild, 0) != 0 || supervisor.childProcessID == 0 }, "io is gone after shutdown")
 
@@ -889,7 +922,9 @@ func runProxyLinkTests() {
 func runSpawnPacingTest() {
     print("proxy respawn pacing")
     var template = Array("/private/tmp/ighostvt-harness-io.XXXXXX".utf8CString)
-    guard let directory = template.withUnsafeMutableBufferPointer({ mkdtemp($0.baseAddress) }).map({ String(cString: $0) }) else {
+    guard let directory = template.withUnsafeMutableBufferPointer({ mkdtemp($0.baseAddress) })
+        .map({ String(cString: $0) })
+    else {
         check(false, "a directory for the stand-in io is created")
         return
     }

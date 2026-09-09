@@ -578,7 +578,8 @@ check(verbatim.environment["PATH"] != nil, "and a PATH")
 check(verbatim.environment["HOME"] != nil && verbatim.environment["USER"] != nil, "and knows whose session it is")
 check(verbatim.environment["SHELL"]?.hasPrefix("/") == true, "and which shell the user has")
 check(
-    verbatim.environment["ZDOTDIR"] == nil && verbatim.environment["ENV"] == nil && verbatim.environment["GHOSTTY_BASH_INJECT"] == nil,
+    verbatim.environment["ZDOTDIR"] == nil && verbatim.environment["ENV"] == nil
+        && verbatim.environment["GHOSTTY_BASH_INJECT"] == nil,
     "with no shell integration, which needs an argv of its own"
 )
 
@@ -670,9 +671,18 @@ do {
         }
         usleep(50000)
     }
-    check(sourceDirectory == "/private/tmp", "a live session's current directory is read from the kernel (got \(String(describing: sourceDirectory)))")
-    check(harnessQueue.sync { registry.inheritableDirectory(from: source.id) } == "/private/tmp", "the registry offers a live session's directory")
-    check(harnessQueue.sync { registry.inheritableDirectory(from: source.id &+ 1000) } == nil, "an unknown session offers nothing")
+    check(
+        sourceDirectory == "/private/tmp",
+        "a live session's current directory is read from the kernel (got \(String(describing: sourceDirectory)))"
+    )
+    check(
+        harnessQueue.sync { registry.inheritableDirectory(from: source.id) } == "/private/tmp",
+        "the registry offers a live session's directory"
+    )
+    check(
+        harnessQueue.sync { registry.inheritableDirectory(from: source.id &+ 1000) } == nil,
+        "an unknown session offers nothing"
+    )
 
     let inherited = try harnessQueue.sync {
         try registry.open(
@@ -692,7 +702,10 @@ do {
         }
         usleep(50000)
     }
-    check(inheritedDirectory == "/private/tmp", "a session opened from another starts in its directory (got \(String(describing: inheritedDirectory)))")
+    check(
+        inheritedDirectory == "/private/tmp",
+        "a session opened from another starts in its directory (got \(String(describing: inheritedDirectory)))"
+    )
 
     let fresh = try harnessQueue.sync {
         try registry.open(
@@ -712,7 +725,10 @@ do {
         }
         usleep(50000)
     }
-    check(freshDirectory == NSHomeDirectory(), "naming a session that never existed opens in the home (got \(String(describing: freshDirectory)))")
+    check(
+        freshDirectory == NSHomeDirectory(),
+        "naming a session that never existed opens in the home (got \(String(describing: freshDirectory)))"
+    )
 
     // `proc_pidinfo` keeps answering with the old path after the directory
     // is removed, so the registry's own stat check is what refuses it.
@@ -731,10 +747,16 @@ do {
         while Date() < moverDeadline, mover.currentDirectory != removable {
             usleep(50000)
         }
-        check(harnessQueue.sync { registry.inheritableDirectory(from: mover.id) } == removable, "a directory that exists is offered")
+        check(
+            harnessQueue.sync { registry.inheritableDirectory(from: mover.id) } == removable,
+            "a directory that exists is offered"
+        )
         check(rmdir(removable) == 0, "the harness can remove the directory under the session")
         check(mover.currentDirectory == removable, "the kernel still names the removed directory")
-        check(harnessQueue.sync { registry.inheritableDirectory(from: mover.id) } == nil, "a directory that is gone is not offered")
+        check(
+            harnessQueue.sync { registry.inheritableDirectory(from: mover.id) } == nil,
+            "a directory that is gone is not offered"
+        )
         harnessQueue.sync { _ = try? registry.close(mover.id) }
     } else {
         check(false, "a removable directory is created")
@@ -754,7 +776,10 @@ do {
         usleep(50000)
     }
     check(harnessQueue.sync { registry.session(departed.id) } == nil, "an exited source leaves the registry")
-    check(harnessQueue.sync { registry.inheritableDirectory(from: departed.id) } == nil, "an exited source offers nothing")
+    check(
+        harnessQueue.sync { registry.inheritableDirectory(from: departed.id) } == nil,
+        "an exited source offers nothing"
+    )
 
     for session in [source, inherited, fresh] {
         harnessQueue.sync { _ = try? registry.close(session.id) }

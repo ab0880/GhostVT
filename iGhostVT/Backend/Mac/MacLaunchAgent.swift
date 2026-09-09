@@ -221,11 +221,17 @@ final class MacLaunchAgent: ObservableObject {
                 if let registeredAt {
                     let remaining = Self.repairWindow - Date().timeIntervalSince(registeredAt)
                     if remaining > 0 {
-                        AppLog.info(.app, "launch agent: waiting \(Int(remaining.rounded(.up))) s for launchd's repair of the item")
+                        AppLog.info(
+                            .app,
+                            "launch agent: waiting \(Int(remaining.rounded(.up))) s for launchd's repair of the item"
+                        )
                         try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
                     }
                 }
-                AppLog.info(.app, "launch agent: rebinding the helper, round \(round), status \(service.status.rawValue)")
+                AppLog.info(
+                    .app,
+                    "launch agent: rebinding the helper, round \(round), status \(service.status.rawValue)"
+                )
                 do {
                     try await service.unregister()
                 } catch {
@@ -252,7 +258,10 @@ final class MacLaunchAgent: ObservableObject {
                     AppLog.info(.app, "launch agent: helper answered after rebind")
                     return
                 }
-                AppLog.warning(.app, "launch agent: helper did not answer after rebind, status \(service.status.rawValue)")
+                AppLog.warning(
+                    .app,
+                    "launch agent: helper did not answer after rebind, status \(service.status.rawValue)"
+                )
             }
             status = .failed(Self.registrationFailure)
         }
@@ -407,9 +416,13 @@ final class MacLaunchAgent: ObservableObject {
 
         private static func relaunch(from url: URL) {
             guard let workspaceClass = NSClassFromString("NSWorkspace") as? NSObject.Type,
-                  let workspace = workspaceClass.perform(NSSelectorFromString("sharedWorkspace"))?.takeUnretainedValue() as? NSObject,
+                  let workspace = workspaceClass
+                      .perform(NSSelectorFromString("sharedWorkspace"))?
+                      .takeUnretainedValue() as? NSObject,
                   let configurationClass = NSClassFromString("NSWorkspaceOpenConfiguration") as? NSObject.Type,
-                  let configuration = configurationClass.perform(NSSelectorFromString("configuration"))?.takeUnretainedValue() as? NSObject
+                  let configuration = configurationClass
+                      .perform(NSSelectorFromString("configuration"))?
+                      .takeUnretainedValue() as? NSObject
             else { return }
             configuration.setValue(true, forKey: "createsNewApplicationInstance")
             let selector = NSSelectorFromString("openApplicationAtURL:configuration:completionHandler:")

@@ -177,7 +177,8 @@ final class TerminalTab: ObservableObject, Identifiable {
         .map { status, isShell in
             Self.resizeThrottle(
                 isShellInForeground: TerminalSessionStore.isIdleAtPrompt(
-                    status: status, isShellInForeground: isShell
+                    status: status,
+                    isShellInForeground: isShell
                 )
             )
         }

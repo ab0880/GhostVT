@@ -181,7 +181,10 @@ final class PTYSession {
         queue: DispatchQueue
     ) throws {
         guard let executable = command.first, !executable.isEmpty else {
-            throw iGhostVTFailure(.spawnFailed, "This terminal has no command to run. Check the default shell in Settings.")
+            throw iGhostVTFailure(
+                .spawnFailed,
+                "This terminal has no command to run. Check the default shell in Settings."
+            )
         }
 
         self.id = id
@@ -771,7 +774,9 @@ final class PTYSession {
             // Not a failure: a large child can spend longer than this in
             // teardown between its exit notice and SZOMB. The registry's
             // SIGCHLD sweep reaps it when the kernel is done.
-            DaemonFileLog.log("session \(id) child \(childPID) not reapable 500ms after its exit notice; leaving it to SIGCHLD")
+            DaemonFileLog.log(
+                "session \(id) child \(childPID) not reapable 500ms after its exit notice; leaving it to SIGCHLD"
+            )
             return
         }
         queue.asyncAfter(deadline: .now() + .milliseconds(20)) { [weak self] in

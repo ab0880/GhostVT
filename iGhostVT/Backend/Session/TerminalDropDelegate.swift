@@ -177,7 +177,9 @@ final class TerminalDropDelegate: NSObject, UIDropInteractionDelegate {
         private func inPlacePath() async -> String? {
             if let fileType, provider.hasItemConformingToTypeIdentifier(fileType.identifier) {
                 let inPlace: URL? = await withCheckedContinuation { continuation in
-                    _ = provider.loadInPlaceFileRepresentation(forTypeIdentifier: fileType.identifier) { url, isInPlace, error in
+                    _ = provider.loadInPlaceFileRepresentation(
+                        forTypeIdentifier: fileType.identifier
+                    ) { url, isInPlace, error in
                         if let error {
                             AppLog.warning(.drop, "in-place load failed for \(fileType.identifier): \(error)")
                         }
@@ -261,7 +263,10 @@ final class TerminalDropDelegate: NSObject, UIDropInteractionDelegate {
                 return await withCheckedContinuation { continuation in
                     _ = provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { data, error in
                         guard let data, !data.isEmpty else {
-                            AppLog.warning(.drop, "image load failed for \(type.identifier): \(String(describing: error))")
+                            AppLog.warning(
+                                .drop,
+                                "image load failed for \(type.identifier): \(String(describing: error))"
+                            )
                             continuation.resume(returning: nil)
                             return
                         }
@@ -274,7 +279,10 @@ final class TerminalDropDelegate: NSObject, UIDropInteractionDelegate {
                             return
                         }
                         guard let image = UIImage(data: data), let png = Self.upright(image).pngData() else {
-                            AppLog.warning(.drop, "image decode failed for \(actual.identifier); storing the bytes as they are")
+                            AppLog.warning(
+                                .drop,
+                                "image decode failed for \(actual.identifier); storing the bytes as they are"
+                            )
                             continuation.resume(returning: nil)
                             return
                         }
@@ -347,7 +355,9 @@ final class TerminalDropDelegate: NSObject, UIDropInteractionDelegate {
         static func fileName(suggested: String?, type: UTType) -> String {
             let fallback = type.conforms(to: .image) ? "image" : type.conforms(to: .directory) ? "folder" : "file"
             let raw = (suggested?.isEmpty == false ? suggested : nil) ?? fallback
-            let safe = String(raw.map { $0 == "/" || $0.isNewline || $0.asciiValue.map { $0 < 0x20 } == true ? "_" : $0 })
+            let safe = String(
+                raw.map { $0 == "/" || $0.isNewline || $0.asciiValue.map { $0 < 0x20 } == true ? "_" : $0 }
+            )
             guard !type.conforms(to: .directory),
                   !extensionMatches((safe as NSString).pathExtension, type),
                   let ext = type.preferredFilenameExtension

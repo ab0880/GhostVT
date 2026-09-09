@@ -69,7 +69,10 @@ enum ShortcutBridge {
             manager.activate(tab)
             if let scene = manager.windowScene, scene.activationState != .foregroundActive {
                 UIApplication.shared.requestSceneSessionActivation(
-                    scene.session, userActivity: nil, options: nil, errorHandler: nil
+                    scene.session,
+                    userActivity: nil,
+                    options: nil,
+                    errorHandler: nil
                 )
             }
             return tab

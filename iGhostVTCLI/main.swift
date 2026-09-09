@@ -86,7 +86,9 @@ func parse(_ arguments: [String]) throws -> Command {
         // Refused whole, never sent shortened: a trimmed argv is a
         // different command, run without a word of complaint.
         guard command.count <= iGhostVTProtocol.maximumCommandArgumentCount else {
-            throw CLIError.usage("The new command takes at most \(iGhostVTProtocol.maximumCommandArgumentCount) arguments.")
+            throw CLIError.usage(
+                "The new command takes at most \(iGhostVTProtocol.maximumCommandArgumentCount) arguments."
+            )
         }
         return .new(command: command)
     case "kill":
