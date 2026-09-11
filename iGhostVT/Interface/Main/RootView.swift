@@ -134,6 +134,7 @@ struct RootView: View {
         .closeTabConfirmation(tabManager)
         .clipboardConfirmation(tabManager)
         .relocationPrompt(MacLaunchAgent.shared)
+        .updatePrompt(UpdateNotice.shared)
     }
 
     private var terminalColumn: some View {
