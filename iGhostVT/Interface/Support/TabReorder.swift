@@ -126,7 +126,7 @@ struct TabSlotShape: InsettableShape {
 /// What travels under the finger. The system's default is a snapshot of
 /// the source view, and a chip or row that is not the active one has no
 /// background of its own — the snapshot came up as a blank grey slab. So
-/// the preview is drawn on purpose: the tab's dot and name on a card that
+/// the preview is drawn on purpose: the tab's name on a card that
 /// is *solid to its edge* — the background colour fills the whole frame
 /// and the slot's shape clips it, so no corner of it is transparent and
 /// nothing behind the drag shows through — sized to the source. No accent
@@ -147,14 +147,12 @@ struct TabDragPreview: View {
 
     let title: String
     let subtitle: String
-    let status: TerminalSessionStore.Status
     let style: Style
     let width: CGFloat
 
     init(tab: TerminalTab, style: Style, width: CGFloat) {
         title = tab.displayTitle
         subtitle = tab.secondaryTitle
-        status = tab.store.status
         self.style = style
         self.width = width
     }
@@ -193,7 +191,6 @@ struct TabDragPreview: View {
         switch style {
         case .chip:
             HStack(spacing: DS.Padding.xs) {
-                StatusDot(status: status, font: .label)
                 Text(title)
                     .font(DS.Font.label)
                     .lineLimit(1)
@@ -204,13 +201,10 @@ struct TabDragPreview: View {
             .frame(width: width, height: 32)
         case .row:
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: DS.Padding.s) {
-                    StatusDot(status: status, font: .labelEmphasis)
-                    Text(title)
-                        .font(DS.Font.labelEmphasis)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
+                Text(title)
+                    .font(DS.Font.labelEmphasis)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
                 Text(subtitle)
                     .font(DS.Font.caption)
                     .foregroundColor(.secondary)

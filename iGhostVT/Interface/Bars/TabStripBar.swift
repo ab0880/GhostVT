@@ -87,12 +87,11 @@ struct TabStripBar: View {
     private var centerCapsule: some View {
         // Leading, like the chips: a program that retitles on every prompt
         // (a status line, an agent reporting progress) would otherwise
-        // re-centre the text at each change, and the dot with it.
+        // re-centre the text at each change.
         ZStack(alignment: .leading) {
             if showsSidebar {
                 if let tab = tabManager.activeTab {
                     HStack(spacing: DS.Padding.s) {
-                        ObservedStatusDot(store: tab.store, font: .labelEmphasis)
                         ObservedTabTitle(tab: tab)
                         ObservedTabSubtitle(tab: tab)
                     }
@@ -103,8 +102,7 @@ struct TabStripBar: View {
                     // Keyed on the tab: switching tabs (a new one included)
                     // crossfades one title for another. Without the key
                     // SwiftUI reads it as the same text changing and morphs
-                    // the two — strings overlapping mid-slide, the dot
-                    // drifting after them.
+                    // the two — strings overlapping mid-slide.
                     .id(tab.id)
                     .transition(.opacity)
                 }
@@ -203,15 +201,14 @@ private struct TabChip: View {
     let onSelect: () -> Void
     let onClose: () -> Void
 
-    /// The floor keeps the close button clear of the status dot — a tap
-    /// near the dot must select, not close; the ceiling keeps one long
-    /// title from owning the bar.
+    /// The floor keeps room for a title beside the close button — a tap on
+    /// the chip's leading half must select, not close; the ceiling keeps
+    /// one long title from owning the bar.
     static let widthRange: ClosedRange<CGFloat> = 120 ... 240
 
     var body: some View {
         Button(action: onSelect) {
             HStack(spacing: DS.Padding.xs) {
-                ObservedStatusDot(store: tab.store, font: .label)
                 Text(tab.displayTitle)
                     .font(DS.Font.label)
                     .lineLimit(1)

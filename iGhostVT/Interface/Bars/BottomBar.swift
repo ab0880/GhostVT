@@ -100,7 +100,6 @@ private struct TitleCapsule: View {
 
     var body: some View {
         HStack(spacing: DS.Padding.s) {
-            ObservedStatusDot(store: tab.store, font: .labelEmphasis)
             Text(tab.displayTitle)
                 .font(DS.Font.labelEmphasis)
                 .lineLimit(1)
@@ -111,15 +110,5 @@ private struct TitleCapsule: View {
         .frame(maxWidth: .infinity, minHeight: 44)
         .contentShape(Capsule())
         .barGlass(in: Capsule())
-    }
-}
-
-/// Status dot that re-renders when the store's status changes.
-struct ObservedStatusDot: View {
-    @ObservedObject var store: TerminalSessionStore
-    var font: DS.Font = .label
-
-    var body: some View {
-        StatusDot(status: store.status, font: font)
     }
 }

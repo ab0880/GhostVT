@@ -199,7 +199,6 @@ private struct TabCard: View {
 
     private var header: some View {
         HStack(spacing: DS.Padding.xs) {
-            ObservedStatusDot(store: tab.store, font: .captionEmphasis)
             VStack(alignment: .leading, spacing: 1) {
                 Text(tab.displayTitle)
                     .font(DS.Font.captionEmphasis)

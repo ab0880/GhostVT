@@ -13,7 +13,7 @@ iGhostVT/                    the app, one folder-synchronized Xcode group
 │   ├── Sidebar/             SidebarView (iPad tab list)
 │   ├── TabSwitcher/         grid switcher with live snapshots
 │   ├── Settings/            SettingsSheet (themes, default shell)
-│   └── Support/             GlassStyle, StatusDot, KeyboardState
+│   └── Support/             GlassStyle, KeyboardState
 └── Resources/               Assets.xcassets, Info.plist
 Shared/Protocol/             XPC wire protocol, compiled into app + daemon + CLI
 Shared/Activity/             ActivityAttributes, compiled into app + appex

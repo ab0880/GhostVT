@@ -249,30 +249,26 @@ final class TerminalTab: ObservableObject, Identifiable {
         }
     }
 
-    /// What the tab calls itself: the foreground process's name ("zsh",
-    /// "vim", "grok"), which the daemon reports and which stays short and
-    /// stable while programs retitle at will. Falls back to the reported
-    /// title, then the endpoint, for transports that never report one.
+    /// What the tab calls itself: what the session says about itself — the
+    /// shell-reported title (OSC 2) or the last watched command. Falls back
+    /// to the foreground process's name, then the endpoint, for a session
+    /// that reports nothing.
     var displayTitle: String {
-        let process = store.processName
-        if !process.isEmpty {
-            return process
+        if !reportedTitle.isEmpty {
+            return reportedTitle
         }
-        return reportedTitle.isEmpty ? store.endpointDescription : reportedTitle
+        return store.processName.isEmpty ? store.endpointDescription : store.processName
     }
 
-    /// The line under the process name: what the session says about itself
-    /// — the shell-reported title (OSC 2) or the last watched command —
-    /// and, when it says nothing, the page's own last non-empty row, so an
-    /// untitled session still reads as what it is doing rather than as
-    /// "Terminal" twice. Never repeats `displayTitle`: with no process
-    /// name the reported title is already the first line, so this yields
-    /// the fallback instead.
+    /// The line under the title: the foreground process's name ("zsh",
+    /// "vim", "grok"), which the daemon reports and which stays short and
+    /// stable while programs retitle at will. Never repeats `displayTitle`:
+    /// when the process name is already the first line (or there is none),
+    /// this is the page's own last non-empty row, so an untitled session
+    /// still reads as what it is doing rather than as "zsh" twice.
     var secondaryTitle: String {
-        if store.processName.isEmpty {
-            return pageFallbackLine
-        }
-        return reportedTitle.isEmpty ? pageFallbackLine : reportedTitle
+        let process = store.processName
+        return process.isEmpty || process == displayTitle ? pageFallbackLine : process
     }
 
     /// The last non-empty row of the viewport, and the endpoint only while

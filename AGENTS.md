@@ -245,13 +245,14 @@ session user can no longer enter falls back to the plan's home, never to
 launchd's `/`. The iOS SDK ships no `proc_info.h`, so the struct's ABI lives
 as constants in `ProcVnodePathInfo`.
 
-Tab titles have three sources, in this order. The daemon is the primary: each
+Tab titles have three sources. The daemon's is the one always there: each
 session polls `tcgetpgrp` on its PTY (and re-checks as output drains, rate
 limited — the drain sees one check per 64 KiB otherwise),
 resolves the foreground process group leader's `proc_name`, and pushes it as
 event 102 — also stated in every open/attach reply — so
-`TerminalTab.displayTitle` is a short stable name ("zsh", "vim", "grok") no
-matter how often the program retitles. Ghostty's shell integration is the
+`TerminalTab.secondaryTitle`, the dim line under the title, is a short stable
+name ("zsh", "vim", "grok") no matter how often the program retitles, and a
+session that reports nothing is titled by it. Ghostty's shell integration is the
 second: the daemon injects it (`ShellIntegration`) and the .deb ships
 libghostty's own scripts to `/usr/share/ighostvt/shell-integration`, so the
 shell reports OSC 2 (command), OSC 7 (cwd), OSC 133 (prompts) by itself.
@@ -260,8 +261,8 @@ the daemon always spawns the shell directly, see the pam_launchd gotcha
 below); a shell invoked as `sh` gets none. For it, `CommandTitleTracker` infers a title
 from the line the user typed, and only if it was echoed to the screen — the
 check that keeps a password out of the tab bar. The reported (or inferred)
-title, trailing whitespace trimmed, is the *secondary* line
-(`TerminalTab.secondaryTitle`) under the process name. Because all of these
+title, trailing whitespace trimmed, is the tab's *title*
+(`TerminalTab.displayTitle`), over the process name. Because all of these
 live on *other* observable objects, the tab has to republish their changes
 or no SwiftUI view redraws.
 

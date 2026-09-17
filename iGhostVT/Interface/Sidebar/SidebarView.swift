@@ -170,13 +170,10 @@ private struct SidebarRow: View {
         Button(action: onSelect) {
             HStack(spacing: DS.Padding.s) {
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: DS.Padding.s) {
-                        ObservedStatusDot(store: tab.store, font: titleFont)
-                        Text(tab.displayTitle)
-                            .font(titleFont)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
+                    Text(tab.displayTitle)
+                        .font(titleFont)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                     Text(tab.secondaryTitle)
                         .font(DS.Font.caption)
                         .foregroundColor(.secondary)
